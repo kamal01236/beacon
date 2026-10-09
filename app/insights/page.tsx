@@ -4,6 +4,8 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { activeSprint, lastSprint, activeItems, updates } from "@/lib/data";
+import { Burndown, VelocityBars, DeltaGrid, StatusDonut } from "@/components/charts";
+import { burndown, velocitySeries, impactDeltas, statusBreakdown } from "@/lib/metrics";
 
 const LENSES = [
   { key: "root", label: "Root cause" },
@@ -68,6 +70,9 @@ function RootCause() {
 }
 
 function Trends({ s1, s2 }: { s1: any; s2: any }) {
+  const burn = burndown();
+  const velocity = velocitySeries();
+  const slices = statusBreakdown();
   const rows = [
     { label: "Participation", a: s1.participationRate, b: s2.participationRate },
     { label: "Update quality", a: s1.updateQualityRate, b: s2.updateQualityRate },
@@ -75,39 +80,50 @@ function Trends({ s1, s2 }: { s1: any; s2: any }) {
     { label: "Stories ready", a: s1.storiesReady, b: s2.storiesReady },
   ];
   return (
-    <div className="card" style={{ marginTop: 14 }}>
-      <div className="ct">Trend — Sprint 1 → Sprint 2</div>
-      {rows.map((r) => (
-        <div key={r.label} style={{ marginTop: 12 }}>
-          <div className="barlab"><span>{r.label}</span><span>{pct(r.a)} → {pct(r.b)}</span></div>
-          <div className="bar"><i className="ok" style={{ width: pct(r.b) }} /></div>
+    <>
+      <div className="grid" style={{ marginTop: 14 }}>
+        <div className="card">
+          <div className="ct">Sprint burndown <span className="mut">Day {burn.today} of {burn.total}</span></div>
+          <Burndown data={burn} />
+          <div className="legend">
+            <span><i style={{ background: "var(--ideal)" }} />ideal</span>
+            <span><i style={{ background: "var(--ai-fill)" }} />actual</span>
+            <span>{burn.remainingToday}/{burn.committed} left</span>
+          </div>
         </div>
-      ))}
-      <div className="sub" style={{ marginTop: 10 }}>Two sprints is a direction, not a trend line — a full trend accumulates from Sprint 3.</div>
-    </div>
+        <div className="card">
+          <div className="ct">Velocity <span className="mut">goal vs actual</span></div>
+          <VelocityBars bars={velocity} />
+        </div>
+        <div className="card">
+          <div className="ct">Status mix <span className="mut">click to filter the board</span></div>
+          <StatusDonut slices={slices} />
+        </div>
+      </div>
+      <div className="card" style={{ marginTop: 14 }}>
+        <div className="ct">Practice signals — Sprint 1 → Sprint 2</div>
+        {rows.map((r) => (
+          <div key={r.label} style={{ marginTop: 12 }}>
+            <div className="barlab"><span>{r.label}</span><span>{pct(r.a)} → {pct(r.b)}</span></div>
+            <div className="bar"><i className="ok" style={{ width: pct(r.b) }} /></div>
+          </div>
+        ))}
+        <div className="sub" style={{ marginTop: 10 }}>Two sprints is a direction, not a trend line — a full trend accumulates from Sprint 3.</div>
+      </div>
+    </>
   );
 }
 
 function Impact({ s1, s2 }: { s1: any; s2: any }) {
-  const rows = [
-    { label: "Stand-up time", a: `${s1.standupTimeMins}m`, b: `${s2.standupTimeMins}m` },
-    { label: "Blocker visibility", a: `${s1.blockerVisibilityDays}d`, b: `${s2.blockerVisibilityDays}d` },
-    { label: "Participation", a: pct(s1.participationRate), b: pct(s2.participationRate) },
-    { label: "Update quality", a: pct(s1.updateQualityRate), b: pct(s2.updateQualityRate) },
-  ];
+  const deltas = impactDeltas();
   return (
     <>
       <div className="banner warn" style={{ marginTop: 14 }}>
         <div className="bt">Sprint 1 figures are an <b>estimated baseline</b>. In a pilot these are replaced by the team&apos;s own measured first week — we never claim improvement against an invented number.</div>
       </div>
-      <div className="kpis" style={{ marginTop: 14 }}>
-        {rows.map((r) => (
-          <div key={r.label} className="kpi good">
-            <div className="klab">{r.label}</div>
-            <div className="kval" style={{ fontSize: 20 }}>{r.b}</div>
-            <div className="kd flat">was {r.a}</div>
-          </div>
-        ))}
+      <div className="card" style={{ marginTop: 14 }}>
+        <div className="ct">Measured impact <span className="mut">Sprint 1 baseline → Sprint 2</span></div>
+        <DeltaGrid deltas={deltas} />
       </div>
     </>
   );

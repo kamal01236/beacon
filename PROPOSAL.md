@@ -3,7 +3,7 @@
 > **This document is our implementation plan** — what we are building and why. It evolves.
 > **The hackathon requirement is kept separate** in [HACKATHON-BRIEF.md](./HACKATHON-BRIEF.md) (the fixed reference). If our product diverges or grows beyond the hackathon, that brief stays clean so we can always trace back to the original ask.
 > **Primary challenge area (our choice):** Agile Practices, with benefits across the other five.
-> **Status:** Plan v2 (prototype planning). See also [PROPOSAL-REVIEW.md](./PROPOSAL-REVIEW.md), [UI-FLOWS.md](./UI-FLOWS.md).
+> **Status:** Plan v2. The product now lives **in code** (see [README.md](./README.md)); the agent model is in [AGENT-ARCHITECTURE.md](./AGENT-ARCHITECTURE.md).
 
 ---
 
@@ -158,7 +158,7 @@ Every metric gets a **baseline** and a **target** so improvement is measurable. 
 | **Should** | Recognition: points, badges, leaderboard and kudos feed (derived from existing data) |
 | **Should** | Auto sprint review/retro + root-cause analytics: "what went well / didn't / to improve" and who-gets-blocked-on-what patterns, with auto charts |
 | **Should** | Actionable charts: every chart element (status donut, velocity bar, burndown point, KPI tile) drills into the filtered items — analytics lead straight to action |
-| **Should** | Write-back to Jira / Azure DevOps: push the AI story rewrite into the description, append clarity / blocker / daily-summary as a comment, and update status / priority / blocker — all preview-first and labelled AI-assisted (see [INTEGRATION-PLAN.md](./INTEGRATION-PLAN.md)) |
+| **Should** | Write-back to Jira / Azure DevOps: push the AI story rewrite into the description, append clarity / blocker / daily-summary as a comment, and update status / priority / blocker — all preview-first and labelled AI-assisted (see [AGENT-ARCHITECTURE.md §10](./AGENT-ARCHITECTURE.md)) |
 | **Should** | Item hierarchy & roll-up: show stories with their child tasks/bugs; a blocked child or open child bug flags the parent as "cannot deliver" and surfaces the bug for prioritisation |
 | **Should** | Deliverability forecast: per-item and per-sprint "will it land?" with reasons, factoring estimate, remaining capacity, blockers and leaves |
 | **Should** | Capacity & leave planning: team availability calendar; flag when a prioritised item's owner is on leave; feed next-sprint planning |
@@ -167,9 +167,9 @@ Every metric gets a **baseline** and a **target** so improvement is measurable. 
 
 ### Roadmap (mention on a slide, do not build yet)
 
-See **[DIFFERENTIATION.md](./DIFFERENTIATION.md)** for the full "why it's different" and the vision ladder. Headlines:
+The vision ladder beyond the demo. Headlines:
 
-- Live two-way Jira / Azure DevOps integration + **independent mode** and **create-here → replicate-to-Jira** (see [INTEGRATION-PLAN.md](./INTEGRATION-PLAN.md))
+- Live two-way Jira / Azure DevOps integration + **independent mode** and **create-here → replicate-to-Jira** (see [AGENT-ARCHITECTURE.md §10](./AGENT-ARCHITECTURE.md))
 - Teams / Slack bot with quick-reply buttons and push notifications
 - **AI Scrum Master (proactive):** auto-draft items from meetings, propose owners/estimates, auto-nudge, keep the board prioritised, generate stand-up digest + retro — all human-approved
 - **AI teammate & onboarding / KT assistant:** reads the project KB + KT recordings/docs, answers "how does X work here?" with citations, and generates a **team-specific onboarding plan** that ramps a new joiner with no extra hand-holding
@@ -234,7 +234,7 @@ Alternative if the team prefers Python: **FastAPI + React (Vite)**, same structu
 
 **Collaborative assist:** each item carries an `assists[]` thread — `{ id, itemId, from, kind(update|offer-help|info), text, date }` — so a teammate who isn't the owner can contribute an update or offer help, threaded into the item's context. The owner stays accountable; the AI summary folds assists into the item's discussion summary.
 
-**Read + write-back to Jira / Azure DevOps:** the `ticketSource` interface extends beyond read to `setDescription`, `addComment`, `transition`, `setBlockerFlag`, `createItem` — so the tool can **fetch items directly from Jira or ADO and push results back** (AI story rewrite → description; clarity / blocker / daily-summary → comment; status / priority / blocker → fields; extracted actions → new items). Writes are explicit, preview-first, labelled AI-assisted, and audited. Full field mapping, API endpoints, auth, sync model and rollout scope are in **[INTEGRATION-PLAN.md](./INTEGRATION-PLAN.md)**.
+**Read + write-back to Jira / Azure DevOps:** the `ticketSource` interface extends beyond read to `setDescription`, `addComment`, `transition`, `setBlockerFlag`, `createItem` — so the tool can **fetch items directly from Jira or ADO and push results back** (AI story rewrite → description; clarity / blocker / daily-summary → comment; status / priority / blocker → fields; extracted actions → new items). Writes are explicit, preview-first, labelled AI-assisted, and audited. Full field mapping, API endpoints, auth, sync model and rollout scope are in **[AGENT-ARCHITECTURE.md §10](./AGENT-ARCHITECTURE.md)**.
 
 ### Data model
 
@@ -271,7 +271,7 @@ KnowledgeDoc { id, title, source(ticket|doc|runbook), url, text }          // KB
 
 **Capacity & leave:** each member has `capacityHrs` and `leaves[]`; the sprint planner shows who is available when. Assigning or prioritising an item to someone **on leave** raises a flag ("owner unavailable — won't be picked up"), and leave feeds the deliverability forecast and next-sprint planning.
 
-**Bug RCA → write-back:** for a bug/defect, AI drafts `rca { summary, cause, fix, prevention }`; the facilitator reviews and **pushes it into the bug's Jira fields / description / comment** (see [INTEGRATION-PLAN.md](./INTEGRATION-PLAN.md)), so the RCA lives on the ticket, not in a side doc.
+**Bug RCA → write-back:** for a bug/defect, AI drafts `rca { summary, cause, fix, prevention }`; the facilitator reviews and **pushes it into the bug's Jira fields / description / comment** (see [AGENT-ARCHITECTURE.md §10](./AGENT-ARCHITECTURE.md)), so the RCA lives on the ticket, not in a side doc.
 
 **Per-item context:** every item carries its own thread so it "knows its own story" — an AI-maintained `discussionSummary` (rolled up from its updates and any meeting mentions), why it matters (`importance`), `progressPct`, an AI-estimated `projectedCompletion`, and a `health` signal (on-track / at-risk / blocked). This is what lets a reader catch up on any item in one glance instead of reading every update.
 
@@ -286,17 +286,17 @@ The proposal's "explainable score" and the facilitator's need to "bump this up" 
 
 The facilitator raises or lowers **work priority**; because work priority is an *input* to the attention score, the score moves transparently and the `reasons[]` explain exactly how (e.g. *"Work priority raised to Critical (+30)"*). The score itself is never hand-edited — that is what keeps it trustable. For one-off control the facilitator can **Pin** an item to the top or **Snooze** it, both logged. This gives full manual control without breaking explainability.
 
-**Seed data:** 2 sprints of data (Sprint 1 closed, Sprint 2 active; demo clock frozen at **Day 8 of 10**, see [PROPOSAL-REVIEW.md](./PROPOSAL-REVIEW.md) D3). 6 named team members, 1 client meeting transcript (Apex Financial, 180 words, paste-ready), 12 Sprint 2 items spanning the type taxonomy, 4 user stories at scores 2/10, 3/10, 5/10 and 8/10, and 28 daily update records. Includes 2 spillover items from Sprint 1 and 2 tracked decisions extracted from the meeting.
+**Seed data:** ~100 predefined work items across **four sprints** (Sprint 0 + 1 completed, Sprint 2 active, Sprint 3 planned; demo clock frozen at **Day 8 of 10**). 6 named team members, 1 client meeting transcript (Apex Financial, 180 words, paste-ready), the crafted Sprint 2 items spanning the type taxonomy, 4 user stories at scores 2/10, 3/10, 5/10 and 8/10, plus daily update records. Includes spillover items from Sprint 1 and tracked decisions extracted from the meeting. No connectors, no database — see [README.md](./README.md). Regenerate with `node scripts/generate-seed.mjs`.
 
 **Story arc (key demo narrative):** REQ-001 (Payment gateway, Marcus Williams) — Day 1-2 normal updates, Day 3 free-text signals distress ("struggling…might need help"), Days 4-5 no update at all. AI detects the pattern, priority score rises to 84, facilitator is alerted. Blocker surfaced in hours, not days. Sprint 1 baseline shows the same item type sat unowned for 3.2 days on average before this tool existed.
 
 **Attention score formula (explainable, single source of truth = `lib/priorityScore.ts`):**
 `score = work_priority_weight + blocker_age_days×15 + overdue_days×15 + dependent_count×8 + due_proximity_penalty + no_owner_penalty×20 + client_impact_flag×10 + spillover_flag×15`
-where `work_priority_weight` = Critical 40 / High 30 / Medium 20 / Low 10. Output includes a `reasons[]` array that **sums exactly to the score** (so a reader can audit it) — shown next to the score with a "how this is calculated" popover. The facilitator adjusts **work priority** (an input) rather than the score; see the two-layer model above. *The current seed scores must be regenerated from this function — see [PROPOSAL-REVIEW.md](./PROPOSAL-REVIEW.md) D1.*
+where `work_priority_weight` = Critical 40 / High 30 / Medium 20 / Low 10. Output includes a `reasons[]` array that **sums exactly to the score** (so a reader can audit it) — shown next to the score with a "how this is calculated" popover. The facilitator adjusts **work priority** (an input) rather than the score; see the two-layer model above. Seed scores are reconciled to this invariant (`score == sum(reasons)`) by `scripts/generate-seed.mjs`.
 
 **AI response cache:** All five AI scenarios (meeting extraction, update structuring, blocker explanation, clarity-vague, clarity-good) have pre-computed responses stored in `/data/ai-cache.json`. Demo is protected against API or network issues on the day.
 
-> Full seed data specification: see `SEED-DATA-PLAN.md` (entity counts, item table, story arc timeline, metrics baseline numbers, and initial file checklist).
+> The seed lives in `data/*.json` and is generated by `scripts/generate-seed.mjs` (entity counts, item taxonomy, story-arc timeline, metrics baselines). See [README.md](./README.md) for the data model.
 
 ### Target enterprise architecture
 

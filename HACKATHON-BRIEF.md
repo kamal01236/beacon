@@ -1,7 +1,7 @@
 # Flo Hack — Hackathon Brief (Reference)
 
 > **This document is the fixed reference.** It records *what the hackathon asks of us and how we are judged* — nothing about our product. It does not change as our plan evolves.
-> **Our implementation lives separately** in [PROPOSAL.md](./PROPOSAL.md) (product plan), [UI-FLOWS.md](./UI-FLOWS.md), [SEED-DATA-PLAN.md](./SEED-DATA-PLAN.md).
+> **Our implementation lives separately** in [README.md](./README.md) (the built app — source of truth), [PROPOSAL.md](./PROPOSAL.md) (product plan), and [AGENT-ARCHITECTURE.md](./AGENT-ARCHITECTURE.md) (the agent).
 > **Why separate:** if our product later diverges or grows beyond the hackathon, this brief stays clean so we can always check our work against the original ask, and show judges a clear line from requirement → implementation.
 
 ---

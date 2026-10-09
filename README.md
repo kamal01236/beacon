@@ -6,8 +6,8 @@ can't: it surfaces hidden blockers from update language, explains *why* each ite
 needs attention (an explainable score, never a black box), rolls delivery risk up
 honestly, and keeps the human in the loop on every AI action.
 
-The product flows now live **in code** (this Next.js app). The design canvas under
-`design/` is the earlier source and is being retired.
+The product flows live **in code** (this Next.js app) — a single source of truth.
+The earlier HTML design canvas has been retired.
 
 ## Architecture: a background agent (not just a dashboard)
 
@@ -78,7 +78,7 @@ there are no separate mobile pages.
 ```
 app/
   layout.tsx            RoleProvider + AppShell wrap every page
-  globals.css           the whole design system (ported from design/beacon.css)
+  globals.css           the whole design system (tokens, shell, cards, charts)
   overview/             facilitator landing — "cannot deliver" roll-up + attention
   agent/                the agent surface — last run, input-request loop, assessments
   board/                priority board — ranked by explainable score (?status=, ?min=, ?type=)
@@ -87,10 +87,21 @@ app/
   inbox/ delivery/ insights/ retro/      facilitator tools
   manager/              manager view (team-level only, no individual scoring)
   my-work/ get-help/ trends/             member views
-components/   AppShell, Nav, PersonaSwitcher, RoleProvider, ui (Avatar, ScoreReasons, AiBlock…)
-lib/          types, data (seed loaders), demo (frozen clock), priorityScore, nav
+components/   AppShell, Nav, PersonaSwitcher, RoleProvider, ui, charts (SVG donut, burndown, velocity, rings, team pulse)
+lib/          types, data (seed loaders), demo (frozen clock), priorityScore, nav, metrics (chart derivations)
 data/         seed JSON (members, sprints, items, updates, meetings, stories, kudos, ai-cache)
 ```
+
+### Visuals — honest by construction
+Overview and Insights carry hand-drawn SVG charts (`components/charts.tsx`), all
+derived in `lib/metrics.ts` from the seed + frozen clock: a **clickable status
+donut** (each slice opens the board filtered to that status), a **sprint burndown**
+(ideal line + real endpoints — future days aren't drawn, so no number is invented),
+**velocity** goal-vs-actual bars, Sprint-1→2 **impact deltas**, and progress rings.
+A **Team pulse** widget shows cadence (update streak, participation), a collective
+badge wall, and the kudos feed — **team-level only; there is no individual
+leaderboard**, by the same "no individual performance scoring" principle the
+manager view follows.
 
 ### The attention score
 `lib/priorityScore.ts` defines the score as the **sum of its explainable reasons** —

@@ -1,7 +1,9 @@
 import Link from "next/link";
-import { activeItems, memberById, code } from "@/lib/data";
+import { activeItems, memberById } from "@/lib/data";
 import { attentionScore, byAttention } from "@/lib/priorityScore";
 import { Avatar, TypeTag, StatusPill, ScoreReasons } from "@/components/ui";
+import { StatusDonut, Burndown, VelocityBars, TeamPulseCard } from "@/components/charts";
+import { statusBreakdown, burndown, velocitySeries, teamPulse } from "@/lib/metrics";
 
 export default function OverviewPage() {
   const items = activeItems();
@@ -11,6 +13,11 @@ export default function OverviewPage() {
   const spillover = items.filter((i) => i.spillover);
   const attn = ranked.filter((i) => attentionScore(i).value >= 70);
   const done = items.filter((i) => i.status === "done" || i.status === "confirmed" || i.status === "resolved");
+
+  const slices = statusBreakdown();
+  const burn = burndown();
+  const velocity = velocitySeries();
+  const pulse = teamPulse();
 
   const tiles = [
     { label: "Active items", value: items.length, cls: "", q: "" },
@@ -52,6 +59,31 @@ export default function OverviewPage() {
         ))}
       </section>
 
+      <div className="grid" style={{ marginTop: 16 }}>
+        <div className="card">
+          <div className="ct">Status mix <span className="mut">click a slice to open the board</span></div>
+          <StatusDonut slices={slices} />
+        </div>
+        <div className="card">
+          <div className="ct">Sprint burndown <span className="mut">Day {burn.today} of {burn.total}</span></div>
+          <Burndown data={burn} />
+          <div className="legend">
+            <span><i style={{ background: "var(--ideal)" }} />ideal</span>
+            <span><i style={{ background: "var(--ai-fill)" }} />actual remaining</span>
+            <span>{burn.remainingToday} of {burn.committed} items left</span>
+          </div>
+          <div className="drill">Both endpoints are real; future days aren&apos;t drawn — we don&apos;t project numbers we don&apos;t have.</div>
+        </div>
+        <div className="card">
+          <div className="ct">Velocity <span className="mut">goal vs actual</span></div>
+          <VelocityBars bars={velocity} />
+          <div className="legend">
+            <span><i style={{ background: "#C9D6E2" }} />goal</span>
+            <span><i style={{ background: "var(--ai-fill)" }} />actual</span>
+          </div>
+        </div>
+      </div>
+
       <div className="cols" style={{ marginTop: 16 }}>
         <div className="col">
           <div className="card">
@@ -92,9 +124,11 @@ export default function OverviewPage() {
 
           <div className="card">
             <div className="ct">Today&apos;s stand-up</div>
-            <div className="sub" style={{ marginTop: 2 }}>5 of 6 updated · Aisha nudged automatically</div>
+            <div className="sub" style={{ marginTop: 2 }}>{pulse.updatedToday} of {pulse.teamSize} updated · Aisha nudged automatically</div>
             <Link className="drill" href="/people">Open team status →</Link>
           </div>
+
+          <TeamPulseCard pulse={pulse} />
         </div>
       </div>
     </>

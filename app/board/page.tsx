@@ -24,6 +24,7 @@ function BoardInner() {
 
   let items = byAttention(activeItems());
   if (status === "spillover") items = items.filter((i) => i.spillover);
+  else if (status === "done") items = items.filter((i) => ["done", "confirmed", "resolved"].includes(i.status));
   else if (status) items = items.filter((i) => i.status === status);
   if (type) items = items.filter((i) => i.type === type);
   if (min) items = items.filter((i) => attentionScore(i).value >= Number(min));

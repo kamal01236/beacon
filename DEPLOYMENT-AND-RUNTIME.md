@@ -125,7 +125,7 @@ without approval; predictive completion dates; the native Teams/Slack channel.
 - **Phase D — Memory.** Sprint digests + a vector index of the repo and KB;
   retrieval-grounded suggestions ("resolved like this in Sprint 2").
 - **Phase E — Connectors + write-back.** Real Jira/ADO + git + KB adapters behind
-  a `ticketSource`-style interface (see `INTEGRATION-PLAN.md`); approved write-back.
+  a `ticketSource`-style interface (see AGENT-ARCHITECTURE.md §10); approved write-back.
 
 The current `lib/agent.ts` already defines the shapes (runs, signals, requests) and
 derives them from data — Phase B is "persist these and serve them over an API"

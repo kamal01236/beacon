@@ -131,4 +131,65 @@ anything. The tracker is written only through the approved write-back path.
 
 Not yet wired (prototype): the live connectors (Jira/ADO, git, KB), the real
 scheduler/webhooks, and the LLM calls behind detection (a cache lives in
-`data/ai-cache.json`). `INTEGRATION-PLAN.md` covers the connector work.
+`data/ai-cache.json`). §10 below covers the connector work.
+
+## 10. Integration & write-back (Jira / Azure DevOps)
+
+Beacon is a **companion**, not a replacement: Jira/ADO stay the system of record.
+It syncs a **thin, selective slice** (the active sprint/board, not the whole
+backlog) and writes back only on **explicit, previewed, AI-labelled user action**.
+
+**Read.** Jira Cloud via `POST /rest/api/3/search` (JQL, scoped to open sprints);
+ADO via WIQL (`/_apis/wit/wiql`) → batch `GET /_apis/wit/workitems`. Parent/child
+hierarchy comes from Jira sub-tasks/Epic link and ADO hierarchy links; roll-up
+health and the deliverability forecast are computed **in the hub**, not in Jira.
+
+**Field mapping** (the heart of the adapter):
+
+| Beacon | Jira | Azure DevOps |
+|---|---|---|
+| `title` | `summary` | `System.Title` |
+| `status` | `status` (+ transition id) | `System.State` |
+| `workPriority` | `priority` | `Microsoft.VSTS.Common.Priority` |
+| `owner` | `assignee` | `System.AssignedTo` |
+| `dueDate` | `duedate` | `…Scheduling.DueDate` |
+| `description` | `description` (ADF) | `System.Description` (HTML) |
+| blocker flag | "Flagged" / impediment / label | tag `Blocked` / Impediment link |
+| parent/children | `parent` + sub-tasks / Epic link | Hierarchy-Forward/Reverse links |
+
+Hub-only (never round-trips): attention score, `reasons[]`, AI summaries, assist
+threads, clarity score, retro, analytics. Capacity/leave comes from a separate
+`capacitySource` (Tempo / HR / calendar), never written back.
+
+**Write-back** (all explicit, preview-diff first, stamped *"Added by Beacon •
+AI-suggested • <user>"*): push the AI story rewrite into the description
+(`PUT …/issue/{key}` ADF · ADO JSON-Patch on `System.Description`); append a
+comment for clarity/blocker/daily/retro summaries; update status/priority/blocker
+(Jira moves by **transition**, ADO by JSON-Patch); create items from meeting
+extraction.
+
+**Adapter seam** — the same screens work on JSON now and Jira/ADO later with no UI
+rebuild:
+
+```ts
+interface TicketSource {
+  getItems(query): Promise<Item[]>;  getItem(id): Promise<Item>;
+  updateItem(id, patch): Promise<void>;     // status, priority, dueDate, owner
+  setDescription(id, doc): Promise<void>;   // push AI rewrite
+  addComment(id, body): Promise<void>;      // clarity / summary / blocker notes
+  transition(id, toStatus): Promise<void>;  // Jira transition / ADO state
+  setBlockerFlag(id, on, note?): Promise<void>;
+  createItem(input): Promise<{ id, url }>;  // from meeting extraction
+}
+// JsonSource (now) · JiraSource · AdoSource (pilot)
+interface KnowledgeSource { search(query): Promise<Passage[]>; }  // blocker assist
+```
+
+**Auth / sync / safety.** OAuth 2.0 (3LO / Connect-Forge) or API token/PAT scoped
+least-privilege (read + write items + comments). Initial pull scoped to the active
+sprint; stay fresh via webhooks/service hooks + a poll fallback, keyed by
+`externalId` + `externalSystem`. Two-way fields re-fetch the remote value before
+writing so nothing is silently overwritten; every write is audited
+(`who/what/when/before→after`) and reversible. Rollout: **prototype** JsonSource +
+`/data` → **pilot** one real adapter (read + comment/description/status write-back)
+→ **production** both systems, webhooks, audit store, SSO.
