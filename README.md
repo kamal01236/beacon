@@ -36,7 +36,35 @@ npm run dev        # http://localhost:3000
 npm run build      # production build
 ```
 
-Node 18+. The demo clock is frozen at **Sprint 2, Day 8 of 10** (`lib/demo.ts`).
+Node 18+. Runs as-is on **WSL** — this is the recommended environment for the full
+end-to-end app + agent. The demo clock is frozen at **Sprint 2, Day 8 of 10**
+(`lib/demo.ts`).
+
+## Data — predefined, no database
+
+There are **~100 predefined work items** across four sprints (s0 completed → s3
+planned) in `data/*.json`. There are **no connectors and no database**: the agent
+and UI run entirely off this JSON, and the agent *derives* its findings
+deterministically (frozen clock), so every load reproduces the same state. A
+database is only needed once the live agent must remember across runs and store
+human answers — see [DEPLOYMENT-AND-RUNTIME.md](DEPLOYMENT-AND-RUNTIME.md).
+
+Regenerate / resize the dataset (idempotent; keeps the crafted demo items):
+
+```bash
+node scripts/generate-seed.mjs
+```
+
+## Deploy
+
+- **GitHub Pages (static UI, live):** https://kamal01236.github.io/beacon/ — every
+  push to `main` rebuilds and redeploys via `.github/workflows/deploy.yml`. This is
+  the read-only dashboard; the agent is build-time static there.
+- **WSL / Vercel / container (full app + live agent):** `npm run build && npm start`.
+  The static-export settings only switch on under `BUILD_TARGET=pages`, so the
+  server build is unaffected.
+
+Full options and the agent runtime plan: [DEPLOYMENT-AND-RUNTIME.md](DEPLOYMENT-AND-RUNTIME.md).
 
 ## How it's built
 
