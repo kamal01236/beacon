@@ -1,0 +1,44 @@
+[
+  {
+    "id": "s1",
+    "name": "Sprint 1",
+    "goal": "Establish authentication, CI/CD pipeline, and core dashboard layout",
+    "startDate": "2026-09-17",
+    "endDate": "2026-09-26",
+    "status": "completed",
+    "velocityGoal": 8,
+    "velocityActual": 6,
+    "client": "Apex Financial Services",
+    "project": "Client Portal Modernization",
+    "metrics": {
+      "standupTimeMins": 28,
+      "participationRate": 0.68,
+      "blockerVisibilityDays": 3.2,
+      "updateQualityRate": 0.52,
+      "itemsWithOwner": 0.75,
+      "storiesReady": 0.25,
+      "note": "Estimated baseline — to be replaced with real measurements in pilot"
+    }
+  },
+  {
+    "id": "s2",
+    "name": "Sprint 2",
+    "goal": "Deliver payment gateway integration, user dashboard redesign, and PDF export",
+    "startDate": "2026-10-01",
+    "endDate": "2026-10-10",
+    "status": "active",
+    "velocityGoal": 10,
+    "velocityActual": null,
+    "client": "Apex Financial Services",
+    "project": "Client Portal Modernization",
+    "metrics": {
+      "standupTimeMins": 9,
+      "participationRate": 0.87,
+      "blockerVisibilityDays": 0.17,
+      "updateQualityRate": 0.81,
+      "itemsWithOwner": 1.0,
+      "storiesReady": 0.50,
+      "aiExtractionAcceptanceRate": 0.92
+    }
+  }
+]

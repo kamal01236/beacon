@@ -1,0 +1,407 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Root-cause Analytics — Beacon</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="./beacon.css">
+<style>
+/*==BEACON:START==*/
+/* ============================================================================
+   BEACON — COMMON DESIGN SYSTEM
+   Single source of truth for every screen in design/screens/.
+
+   Rule: a screen's own <style> may only hold rules unique to that screen.
+   Anything that appears on two screens belongs here, as a control.
+
+   Applied by  design/apply-theme.mjs  (injects this file into each artboard
+   between the BEACON-CSS markers, so one edit here updates every screen).
+   ========================================================================= */
+
+/* --- 1. Tokens ----------------------------------------------------------- */
+:root{
+  color-scheme:light;
+
+  /* surfaces */
+  --bg:#EEF2F6;            /* app canvas            */
+  --surface:#FFFFFF;       /* cards                 */
+  --surface-2:#FBFCFD;     /* nested / striped rows */
+  --line:#E7EDF3;          /* the ONE border colour */
+  --line-strong:#D4DEE8;   /* control borders       */
+
+  /* text */
+  --ink:#0F2A4A;           /* primary               */
+  --ink-2:#3C5068;         /* secondary             */
+  --ink-3:#5B6B7E;         /* body / meta           */
+  --ink-4:#8794A3;         /* labels / muted        */
+
+  /* brand chrome */
+  --navy:#0F2A4A;
+  --navy-2:#16375A;        /* raised chrome, chips on navy */
+  --navy-3:#1B3A5C;        /* active nav                   */
+  --navy-grad:linear-gradient(180deg,#153A5E,#0F2A4A);
+  --on-navy:#CDD8E4;
+  --on-navy-dim:#A9BACB;
+  --accent-light:#8FE3E3;  /* brand mark + nav icon on navy */
+
+  /* semantic states — one value per job */
+  --ai:#0E6A6A;            --ai-fill:#1FA6A6;  --ai-tint:#E9F6F6;  --ai-line:#BEE3E3;
+  --blocked:#A3172B;       --blocked-fill:#C21F38; --blocked-tint:#FCE4E8; --blocked-line:#F3C2CC;
+  --overdue:#8A5300;       --overdue-fill:#B9700A; --overdue-tint:#FBEFD9; --overdue-line:#E6C98B;
+  --spill:#5A39B8;         --spill-tint:#EEE8FB;   --spill-line:#D3C7F2;
+  --ok:#0F6E3C;            --ok-fill:#2E7D52;      --ok-tint:#E2F3EA;   --ok-line:#BFE3CC;
+
+  /* chart */
+  --grid:#E2E8F0;
+  --ideal:#CBD5E1;
+
+  /* shape + depth */
+  --r-sm:8px; --r:11px; --r-md:14px; --r-lg:16px; --r-pill:999px;
+  --shadow:0 1px 2px rgba(15,42,74,.06);
+
+  /* type */
+  --font:'Plus Jakarta Sans',system-ui,-apple-system,Segoe UI,sans-serif;
+  --t-h1:23px; --t-h2:17px; --t-ct:13px; --t-body:12.5px; --t-meta:11px; --t-label:10.5px;
+}
+
+/* --- 2. Reset ------------------------------------------------------------ */
+*{box-sizing:border-box}
+body{margin:0}
+a{text-decoration:none;color:inherit}
+button{font-family:inherit}
+svg{stroke-linecap:round;stroke-linejoin:round}
+
+/* --- 3. App shell ------------------------------------------------------- */
+.app{
+  width:100%;min-height:100vh;background:var(--bg);color:var(--ink);
+  font-family:var(--font);display:flex;flex-direction:column;
+}
+.topbar{background:var(--navy);color:#fff;padding:12px 22px;display:flex;align-items:center;gap:14px}
+.brand{font-size:16px;font-weight:800;white-space:nowrap}
+.brand span{color:var(--accent-light)}
+.topbar .tag{font-size:var(--t-meta);font-weight:700;color:var(--accent-light);background:var(--navy-2);padding:5px 10px;border-radius:var(--r-pill);white-space:nowrap}
+.topbar .tag.plain{color:var(--on-navy)}
+.topbar .back{font-size:13px;font-weight:700;color:var(--accent-light)}
+.spacer{flex:1}
+.search{background:var(--navy-2);border:0;color:#fff;font-family:inherit;font-size:12.5px;padding:8px 12px;border-radius:var(--r-pill);width:190px;max-width:34vw}
+.search::placeholder{color:#7C93AC}
+.persona{font-size:13px;font-weight:700;background:var(--navy-2);padding:8px 13px;border-radius:var(--r-pill);color:#fff;white-space:nowrap}
+
+.body{display:flex;flex:1;min-width:0}
+.main{flex:1;min-width:0;padding:20px 22px 26px}
+
+/* page heading */
+.h1{font-size:var(--t-h1);font-weight:800;margin:0;text-wrap:balance}
+.sub{font-size:13px;color:var(--ink-3);margin-top:3px}
+.h2{font-size:var(--t-h2);font-weight:800;margin:22px 0 10px}
+
+/* --- 4. Side navigation (canonical, role-based) ------------------------- */
+.sidenav{
+  width:200px;flex:0 0 200px;background:var(--navy);color:var(--on-navy);
+  padding:10px 10px 20px;display:flex;flex-direction:column;gap:2px;
+}
+.nav{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--r);font-size:13px;font-weight:600;color:var(--on-navy-dim)}
+.nav svg{width:18px;height:18px;flex:0 0 18px}
+.nav:hover{background:#17375A;color:#fff}
+.nav.on{background:var(--navy-3);color:#fff}
+.nav.on svg{color:var(--accent-light)}
+.nav .count{margin-left:auto;font-size:10px;font-weight:800;background:var(--blocked-fill);color:#fff;border-radius:var(--r-pill);padding:2px 6px}
+.navgap{flex:1}
+.navnote{font-size:10px;color:#6D839A;padding:8px 12px;line-height:1.4}
+
+/* --- 4b. Lens bar ------------------------------------------------------- *
+   Several artboards presenting as ONE screen (People = Today | Capacity,
+   Insights = Root cause | Trends | Impact). One nav slot, lenses in-page.  */
+.lens{display:flex;gap:4px;flex-wrap:wrap;background:#E3E9F0;border:1px solid var(--line);padding:4px;border-radius:var(--r-md);margin-top:14px;width:fit-content;max-width:100%}
+.lens a,.lens span{font-size:12.5px;font-weight:700;padding:8px 14px;border-radius:var(--r-sm);color:var(--ink-3);white-space:nowrap}
+.lens a:hover{color:var(--ink);background:#EFF3F8}
+.lens .on{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+
+/* --- 5. Cards + sections ----------------------------------------------- */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:15px 16px;box-shadow:var(--shadow)}
+.card.flush{padding:0;overflow:hidden}
+.ct{font-size:var(--t-ct);font-weight:800;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.ct .mut{font-size:var(--t-meta);font-weight:600;color:var(--ink-4)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
+.grid.wide{grid-template-columns:repeat(auto-fit,minmax(420px,1fr))}
+.cols{display:flex;flex-wrap:wrap;gap:16px}
+.col{flex:1 1 420px;min-width:0;display:flex;flex-direction:column;gap:14px}
+.col.narrow{flex:1 1 300px}
+
+/* --- 6. KPI tiles ------------------------------------------------------- */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);padding:14px;box-shadow:var(--shadow)}
+.klab{font-size:var(--t-meta);font-weight:700;color:var(--ink-4)}
+.kval{font-size:28px;font-weight:800;margin-top:4px;font-variant-numeric:tabular-nums}
+.kd{font-size:var(--t-meta);font-weight:700;margin-top:2px}
+.kd.up{color:var(--ok)} .kd.down{color:var(--blocked)} .kd.flat{color:var(--ink-4)}
+.kpi.risk{background:var(--overdue-tint);border-color:var(--overdue-line)} .kpi.risk .kval{color:var(--overdue)}
+.kpi.bad{background:var(--blocked-tint);border-color:var(--blocked-line)} .kpi.bad .kval{color:var(--blocked)}
+.kpi.good{background:var(--ok-tint);border-color:var(--ok-line)} .kpi.good .kval{color:var(--ok)}
+/* a KPI that filters the board is a link, and says so */
+a.kpi{display:block} a.kpi:hover{border-color:var(--ai-fill)}
+
+/* --- 7. Buttons -------------------------------------------------------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;border:0;font-family:inherit;font-size:13px;font-weight:800;padding:11px 15px;border-radius:var(--r);cursor:pointer;white-space:nowrap}
+.btn svg{width:15px;height:15px}
+.btn.p{background:var(--ai);color:#fff}
+.btn.s{background:var(--surface);color:var(--ink);border:1.5px solid var(--line-strong)}
+.btn.g{background:transparent;color:var(--ai);padding:8px 10px}
+.btn.d{background:var(--blocked-fill);color:#fff}
+.btn.sm{font-size:11.5px;padding:7px 11px;border-radius:var(--r-sm)}
+.btn.full{width:100%}
+.btn.grow{flex:1}
+.btnrow{display:flex;gap:9px;flex-wrap:wrap}
+
+/* --- 8. Chips, pills, badges ------------------------------------------- */
+.chip{display:inline-flex;align-items:center;gap:5px;font-size:var(--t-meta);font-weight:700;padding:4px 10px;border-radius:var(--r-pill);background:#EDF1F6;color:var(--ink-2);white-space:nowrap}
+.chip.blocked{background:var(--blocked-tint);color:var(--blocked)}
+.chip.overdue{background:var(--overdue-tint);color:var(--overdue)}
+.chip.spill{background:var(--spill-tint);color:var(--spill)}
+.chip.ok{background:var(--ok-tint);color:var(--ok)}
+.chip.ai{background:var(--ai-tint);color:var(--ai)}
+.chip.onnavy{background:var(--navy-3);color:var(--on-navy)}
+.chip.sel{background:var(--navy);color:#fff}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.pill{font-size:var(--t-label);font-weight:800;padding:3px 9px;border-radius:var(--r-pill)}
+.pill.r{background:var(--blocked-tint);color:var(--blocked)}
+.pill.a{background:var(--overdue-tint);color:var(--overdue)}
+.pill.g{background:var(--ok-tint);color:var(--ok)}
+.pill.v{background:var(--spill-tint);color:var(--spill)}
+.pill.n{background:#EDF1F6;color:var(--ink-3)}
+/* item-type tag (story/bug/task/…) */
+.type{font-size:9.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;padding:3px 7px;border-radius:6px;background:#EDF1F6;color:var(--ink-3)}
+.type.bug{background:var(--blocked-tint);color:var(--blocked)}
+.type.story{background:#E4EEFA;color:#1B5E8A}
+.type.task{background:var(--ok-tint);color:var(--ok)}
+.type.risk{background:var(--overdue-tint);color:var(--overdue)}
+.type.decision{background:var(--spill-tint);color:var(--spill)}
+
+/* --- 9. Rows + tables -------------------------------------------------- */
+.row{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid #F0F3F7;font-size:var(--t-body)}
+.row:first-of-type{border-top:0}
+.row .nm{flex:1;min-width:0;font-weight:600}
+.row .nm small{display:block;font-weight:500;color:var(--ink-4);font-size:var(--t-meta);margin-top:2px}
+.tablewrap{overflow-x:auto}
+table.t{width:100%;border-collapse:collapse;font-size:var(--t-body)}
+table.t th{text-align:left;font-size:var(--t-label);font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-4);padding:0 10px 8px;white-space:nowrap}
+table.t td{padding:10px;border-top:1px solid var(--line);vertical-align:top}
+table.t tbody tr:nth-child(even){background:var(--surface-2)}
+
+/* --- 10. Score + reasons (the Jira differentiator) --------------------- */
+.score{font-size:19px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1}
+.score.hi{color:var(--blocked)} .score.md{color:var(--overdue)} .score.lo{color:var(--ink-4)}
+.reasons{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.reasons b{font-size:10px;font-weight:800;padding:3px 7px;border-radius:6px;background:#EDF1F6;color:var(--ink-3)}
+.reasons b.w{background:var(--blocked-tint);color:var(--blocked)}
+.reasons .sum{font-size:10px;font-weight:700;color:var(--ink-4);align-self:center}
+
+/* --- 11. Progress + capacity bars ------------------------------------- */
+.bar{height:7px;border-radius:var(--r-pill);background:#E7ECF2;overflow:hidden}
+.bar>i{display:block;height:100%;border-radius:var(--r-pill);background:var(--ai-fill)}
+.bar>i.warn{background:var(--overdue-fill)} .bar>i.bad{background:var(--blocked-fill)} .bar>i.ok{background:var(--ok-fill)}
+.barlab{display:flex;justify-content:space-between;font-size:var(--t-meta);font-weight:700;color:var(--ink-4);margin-bottom:4px}
+
+/* --- 12. Avatar -------------------------------------------------------- */
+.av{width:30px;height:30px;flex:0 0 30px;border-radius:50%;background:var(--navy-2);color:#fff;font-size:11.5px;font-weight:800;display:flex;align-items:center;justify-content:center}
+.av.sm{width:24px;height:24px;flex-basis:24px;font-size:10px}
+.av.leave{background:var(--overdue-fill)}
+
+/* --- 13. Fields -------------------------------------------------------- */
+.field{margin-bottom:12px}
+.fl{font-size:var(--t-label);font-weight:800;letter-spacing:.04em;color:var(--ink-4);text-transform:uppercase;margin-bottom:5px}
+.inp,.ta{width:100%;border:1px solid var(--line-strong);border-radius:var(--r);padding:10px 11px;font-size:var(--t-body);font-family:inherit;background:var(--surface);line-height:1.45;color:#28384A}
+.ta{resize:none}
+.ai .inp,.ai .ta{border-color:var(--ai-line)}
+
+/* --- 14. The AI block — one control, every AI surface ------------------ *
+   Output + confidence + cited source + Accept / Edit / Dismiss.
+   Drawn identically everywhere: this IS the human-in-the-loop story.      */
+.ai{background:var(--ai-tint);border:1px solid var(--ai-line);border-radius:var(--r-lg);padding:15px 16px}
+.ai .ct{color:#0E5A5A}
+.aihead{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.aihead .ct{margin:0}
+.conf{font-size:10px;font-weight:800;padding:3px 8px;border-radius:var(--r-pill);background:#fff;color:var(--ai);border:1px solid var(--ai-line);white-space:nowrap}
+.conf.low{background:var(--overdue-tint);color:var(--overdue);border-color:var(--overdue-line)}
+.aiout{font-size:var(--t-body);line-height:1.5;color:#1D3147}
+.cite{font-size:var(--t-label);color:var(--ai);font-weight:700;margin-top:8px}
+.aiact{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;padding-top:11px;border-top:1px solid var(--ai-line)}
+/* cited source passage */
+.psg{display:flex;gap:10px;padding:10px;border:1px solid #D6EAEA;border-radius:var(--r);background:var(--surface);margin-bottom:8px}
+.src{flex:0 0 auto;font-size:9.5px;font-weight:800;color:#fff;background:var(--ai);padding:3px 7px;border-radius:6px;height:fit-content}
+.src.run{background:var(--spill)} .src.doc{background:#1B5E8A}
+.pt{font-size:var(--t-body);font-weight:700}
+.pw{font-size:var(--t-meta);color:var(--ink-3);margin-top:3px;line-height:1.4}
+
+/* --- 15. States — empty / loading / error / low-signal ---------------- */
+.state{display:flex;flex-direction:column;align-items:center;text-align:center;gap:7px;padding:30px 20px;border:1px dashed var(--line-strong);border-radius:var(--r-lg);background:var(--surface-2);color:var(--ink-3)}
+.state svg{width:26px;height:26px;color:var(--ink-4)}
+.state .st{font-size:var(--t-ct);font-weight:800;color:var(--ink)}
+.state .sx{font-size:var(--t-body);max-width:46ch;line-height:1.5}
+.state.err{border-style:solid;border-color:var(--blocked-line);background:var(--blocked-tint)}
+.state.err .st{color:var(--blocked)}
+.state.wait{border-color:var(--ai-line);background:var(--ai-tint)}
+.skel{height:10px;border-radius:var(--r-pill);background:linear-gradient(90deg,#E7EDF3,#F4F7FA,#E7EDF3);margin:7px 0}
+
+/* banner — sits above page content for one urgent fact */
+.banner{display:flex;align-items:flex-start;gap:12px;padding:13px 15px;border-radius:var(--r-md);font-size:var(--t-body);line-height:1.45}
+.banner.bad{background:var(--blocked-tint);border:1px solid var(--blocked-line);color:#54101C}
+.banner.warn{background:var(--overdue-tint);border:1px solid var(--overdue-line);color:#5C3800}
+.banner.ai{background:var(--ai-tint);border:1px solid var(--ai-line);color:#0E4A4A}
+.banner b{font-weight:800}
+.banner .bt{flex:1;min-width:0}
+
+/* --- 16. Charts -------------------------------------------------------- */
+svg.chart{display:block;width:100%;height:auto;margin-top:10px;max-width:100%}
+svg.chart text{font-family:var(--font);fill:var(--ink-3)}
+svg.chart .ax{stroke:var(--grid)}
+svg.chart .gl{stroke:var(--grid);stroke-dasharray:3 4}
+svg.chart .ideal{stroke:var(--ideal);stroke-dasharray:5 5;fill:none;stroke-width:2}
+svg.chart .ser{fill:none;stroke:var(--ai-fill);stroke-width:3}
+svg.chart .bar-ai{fill:var(--ai-fill)} svg.chart .bar-n{fill:#C9D6E2}
+svg.chart a{cursor:pointer}
+svg.chart a:hover .hit{opacity:.18}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:var(--t-meta);font-weight:700;color:var(--ink-3);margin-top:9px}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:5px}
+/* every chart says what clicking it does */
+.drill{font-size:var(--t-label);font-weight:700;color:var(--ai);margin-top:8px}
+
+/* --- 17. Hero (item / bug header) ------------------------------------- */
+.hero{background:var(--navy-grad);color:#fff;padding:16px 22px}
+.hero .hid{font-size:var(--t-meta);font-weight:700;color:var(--accent-light)}
+.hero .ht{font-size:20px;font-weight:800;margin-top:3px;text-wrap:balance}
+.hero .hmeta{display:flex;gap:9px;margin-top:10px;flex-wrap:wrap}
+
+/* --- 18. Phone frame (member capture screens only) -------------------- */
+.phone{width:390px;min-height:844px;margin:0 auto;background:var(--bg);color:var(--ink);font-family:var(--font);display:flex;flex-direction:column;position:relative}
+.phone .main{padding:16px 16px 96px}
+
+/* --- 19. Responsive — authored ONCE, here ----------------------------- *
+   ≤860px: the side navigation becomes a fixed bottom bar (role-based),
+   columns collapse, tables scroll in place. No screen re-authors this.   */
+@media (max-width:860px){
+  .body{flex-direction:column}
+  .sidenav{
+    position:fixed;left:0;right:0;bottom:0;top:auto;width:auto;height:auto;flex:none;
+    flex-direction:row;justify-content:space-around;gap:0;
+    padding:6px 2px calc(10px + env(safe-area-inset-bottom,0px));
+    border-top:1px solid var(--navy-3);z-index:50;overflow-x:auto;
+  }
+  .sidenav .navgap,.sidenav .navnote{display:none}
+  .nav{flex:1 0 auto;flex-direction:column;gap:3px;font-size:10px;padding:7px 8px;white-space:nowrap;text-align:center}
+  .nav .count{position:absolute;margin:0;transform:translate(14px,-4px)}
+  .main{padding:16px 16px 92px}
+  .topbar{padding:12px 16px;gap:10px}
+  .search{display:none}
+  .hero{padding:14px 16px}
+  .col,.col.narrow{flex-basis:100%}
+  .grid,.grid.wide{grid-template-columns:1fr}
+  .h1{font-size:20px}
+}
+@media (max-width:420px){
+  .topbar .tag{display:none}
+  .kpis{grid-template-columns:1fr 1fr}
+}
+
+/*==BEACON:END==*/
+ /* RootCause.dc.html — screen-specific only */
+ .priv{display:inline-block;font-size:10.5px;font-weight:700;color:#0F6E3C;background:#E2F3EA;border:1px solid #BfE3CC;padding:4px 9px;border-radius:999px;margin-top:10px}
+ .wide{grid-column:1 / -1}
+ .lgd{display:flex;gap:14px;flex-wrap:wrap;margin-top:8px;font-size:11px;font-weight:600;color:#5B6B7E}
+ .lgd i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px}
+ .find{display:flex;gap:12px;border:1px solid #EEF2F6;border-radius:12px;padding:12px;margin-bottom:10px}
+ .ico{flex:0 0 auto;width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff}
+ .i-red{background:#C21F38}
+ .i-amber{background:#B9700A}
+ .i-violet{background:#5A39B8}
+ .fm{flex:1;min-width:0}
+ .ft{font-size:13.5px;font-weight:700}
+ .fw{font-size:12px;color:#5B6B7E;margin-top:4px;line-height:1.45}
+ .ev{font-size:10.5px;color:#0E6A6A;font-weight:700;margin-top:6px}
+ .fix{font-size:12px;color:#28384A;margin-top:6px;background:#E9F6F6;border:1px solid #BEE3E3;border-radius:9px;padding:7px 10px}
+</style>
+</helmet>
+<div class="app">
+  <header class="topbar">
+    <div class="brand">Bea<span>con</span></div>
+    <span class="tag">Sprint 2 · retro</span>
+    <div class="spacer"></div>
+    <span class="persona">Dana · Manager ▾</span>
+  </header>
+
+  <div class="body">
+    <nav class="sidenav" aria-label="facilitator navigation">
+      <a class="nav" href="Overview.dc.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg> <span>Overview</span></a>
+      <a class="nav" href="Main.dc.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="14" y2="17"/></svg> <span>Board</span></a>
+      <a class="nav" href="MeetingInbox.dc.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 12h5l2 3h4l2-3h5"/><path d="M4 12V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v6"/><path d="M3 12v5a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-5"/></svg> <span>Inbox</span><span class="count">5</span></a>
+      <a class="nav" href="Hierarchy.dc.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg> <span>Delivery</span></a>
+      <a class="nav" href="TeamStatus.dc.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="9" cy="8" r="3.4"/><path d="M3 20c0-3.3 2.7-5 6-5s6 1.7 6 5"/><path d="M16 5.5a3.4 3.4 0 0 1 0 6.6M17.5 15c2 .7 3.5 2.3 3.5 5"/></svg> <span>People</span></a>
+      <span class="nav on" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="6" y1="20" x2="6" y2="11"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="18" y1="20" x2="18" y2="14"/></svg> <span>Insights</span></span>
+      <a class="nav" href="Retro.dc.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/></svg> <span>Retro</span></a>
+      <span class="navgap"></span>
+      <span class="navnote">Sarah · Facilitator</span>
+    </nav>
+
+    <main class="main">
+      <h1 class="h1">Root-cause analytics</h1>
+      <div class="sub">Why the sprint went the way it did — patterns Jira doesn't surface</div>
+      <div class="lens" aria-label="Insights views"><span class="on" aria-current="page">Root cause</span><a href="CrossSprint.dc.html">Trends</a><a href="Metrics.dc.html">Impact</a></div>
+      <span class="priv">Team-level only · no individual performance scoring</span>
+
+      <div class="grid">
+        <div class="card">
+          <div class="ct">Where blockers came from <span class="mut">by theme</span></div>
+          <svg class="chart" viewBox="0 0 320 180" role="img" aria-label="Blocker themes">
+            <line x1="120" y1="20" x2="120" y2="150" stroke="#E2E8F0"/>
+            <rect x="120" y="26" width="150" height="20" rx="4" fill="#C21F38"/><text x="8" y="40" font-size="11" fill="#5B6B7E">3rd-party integ.</text><text x="276" y="40" font-size="11" font-weight="800" fill="#C21F38">3</text>
+            <rect x="120" y="58" width="100" height="20" rx="4" fill="#B9700A"/><text x="40" y="72" font-size="11" fill="#5B6B7E">client dep.</text><text x="226" y="72" font-size="11" font-weight="800" fill="#B9700A">2</text>
+            <rect x="120" y="90" width="50" height="20" rx="4" fill="#5A39B8"/><text x="36" y="104" font-size="11" fill="#5B6B7E">unclear story</text><text x="176" y="104" font-size="11" font-weight="800" fill="#5A39B8">1</text>
+            <rect x="120" y="122" width="50" height="20" rx="4" fill="#3C5068"/><text x="54" y="136" font-size="11" fill="#5B6B7E">env/infra</text><text x="176" y="136" font-size="11" font-weight="800" fill="#3C5068">1</text>
+          </svg>
+        </div>
+        <div class="card">
+          <div class="ct">How blockers surfaced <span class="mut">detection source</span></div>
+          <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-top:6px">
+            <svg width="120" height="120" viewBox="0 0 128 128" role="img" aria-label="Detection source donut">
+              <circle cx="64" cy="64" r="54" fill="none" stroke="#1FA6A6" stroke-width="20" stroke-dasharray="237 102" transform="rotate(-90 64 64)"/>
+              <circle cx="64" cy="64" r="54" fill="none" stroke="#B9700A" stroke-width="20" stroke-dasharray="102 237" stroke-dashoffset="-237" transform="rotate(-90 64 64)"/>
+              <text x="64" y="60" text-anchor="middle" font-size="20" font-weight="800" fill="#0F2A4A">70%</text>
+              <text x="64" y="78" text-anchor="middle" font-size="9" font-weight="700" fill="#8794A3">by AI</text>
+            </svg>
+            <div style="font-size:12px;font-weight:600;color:#3C5068;display:flex;flex-direction:column;gap:7px">
+              <span><i style="display:inline-block;width:10px;height:10px;border-radius:3px;background:#1FA6A6;margin-right:7px"></i>AI-detected from wording · 70%</span>
+              <span><i style="display:inline-block;width:10px;height:10px;border-radius:3px;background:#B9700A;margin-right:7px"></i>Self-reported · 30%</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card wide">
+          <div class="ct">Findings <span class="mut">each cites evidence · improvement suggested</span></div>
+          <div class="find">
+            <div class="ico i-red">1</div>
+            <div class="fm"><div class="ft">Third-party integration is the recurring blocker theme</div><div class="fw">Half of all blocked time traces to Stripe/webhook work — same class of issue as PORTAL-412 last quarter.</div><div class="ev">evidence: REQ-001, RSK-001, PORTAL-412</div><div class="fix">Improve: add a spike + a payments runbook check to the Definition of Ready for integration stories.</div></div>
+          </div>
+          <div class="find">
+            <div class="ico i-amber">2</div>
+            <div class="fm"><div class="ft">Client-dependency actions start overdue</div><div class="fw">Credential/UAT actions from the client meeting were due before they could realistically be done, creating client-facing delay.</div><div class="ev">evidence: ACT-001 (overdue 5d), ACT-002</div><div class="fix">Improve: set client-action due dates from the meeting date + SLA, and flag client-delay risk at creation.</div></div>
+          </div>
+          <div class="find">
+            <div class="ico i-violet">3</div>
+            <div class="fm"><div class="ft">Low-clarity stories stall mid-sprint</div><div class="fw">Items that entered at clarity ≤ 3/10 needed rework once edge cases surfaced.</div><div class="ev">evidence: REQ-001 (3/10), REQ-004 (2/10)</div><div class="fix">Improve: gate stories at clarity ≥ 6 before sprint start using the clarity checker.</div></div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":940}}'>
+class Component extends DCLogic { renderVals() { return {}; } }
+</script>
+</x-dc>
+</body>
+</html>

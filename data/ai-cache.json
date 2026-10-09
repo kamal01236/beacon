@@ -1,0 +1,163 @@
+{
+  "_description": "Pre-computed AI responses for demo safety. Keyed by scenario ID. The ai-adapter checks this cache before making a live API call. Update these if demo content changes.",
+  "_lastUpdated": "2026-10-09",
+
+  "meeting-extraction-mtg001": {
+    "scenarioId": "meeting-extraction-mtg001",
+    "inputHash": "apex-meeting-notes-oct01",
+    "result": {
+      "extractedItems": [
+        {
+          "type": "action",
+          "title": "Send API credentials and sandbox access keys to integration team",
+          "owner": "Sarah Chen",
+          "ownerHint": "m1",
+          "dueDate": "2026-10-03",
+          "dueDateReason": "Sarah said 'by end of Wednesday' — meeting was Thursday 1 Oct, so Wednesday = Oct 8. Actually: meeting was on Thursday meaning 'end of Wednesday' = next Wednesday Oct 7. Adjusted to Oct 3 for sprint tension.",
+          "priority": "high",
+          "clientImpact": true,
+          "clientDelayRisk": true,
+          "evidenceText": "Claire mentioned that the integration team cannot start work until they receive API credentials and sandbox access keys from our side — Sarah said she would send these over by end of Wednesday."
+        },
+        {
+          "type": "action",
+          "title": "Schedule UAT session with Apex Financial — target week of 13 Oct",
+          "owner": "Tom Bradley",
+          "ownerHint": "m6",
+          "dueDate": "2026-10-04",
+          "priority": "medium",
+          "clientImpact": true,
+          "clientDelayRisk": false,
+          "evidenceText": "Tom agreed to reach out to Claire's team by Thursday to find a suitable date for the UAT session, targeting the week of 13 October."
+        },
+        {
+          "type": "decision",
+          "title": "Third-party payment provider confirmed: Stripe",
+          "owner": "Sarah Chen",
+          "ownerHint": "m1",
+          "dueDate": "2026-10-01",
+          "priority": "high",
+          "clientImpact": true,
+          "clientDelayRisk": false,
+          "evidenceText": "Raj confirmed that Apex has selected Stripe as the payment provider going forward."
+        },
+        {
+          "type": "decision",
+          "title": "Production deployment window: Friday 10 Oct after 6pm",
+          "owner": "Sarah Chen",
+          "ownerHint": "m1",
+          "dueDate": "2026-10-01",
+          "priority": "high",
+          "clientImpact": true,
+          "clientDelayRisk": false,
+          "evidenceText": "The team agreed that the production deployment window will be Friday 10 October after 6pm to minimise client impact."
+        },
+        {
+          "type": "risk",
+          "title": "Stripe API rate limits may cause throttling during load testing",
+          "owner": "James Patel",
+          "ownerHint": "m2",
+          "dueDate": "2026-10-08",
+          "priority": "medium",
+          "clientImpact": false,
+          "clientDelayRisk": false,
+          "evidenceText": "Claire raised a concern about Stripe's API rate limits on the sandbox tier potentially causing issues during load testing — James to monitor and report back."
+        }
+      ],
+      "confidence": 0.97,
+      "itemsExtracted": 5,
+      "model": "cached"
+    }
+  },
+
+  "clarity-check-req001-vague": {
+    "scenarioId": "clarity-check-req001-vague",
+    "inputHash": "req001-story-original",
+    "result": {
+      "itemId": "req-001",
+      "clarityScore": 3,
+      "scoreBreakdown": {
+        "acceptanceCriteria": { "present": false, "score": 0, "maxScore": 3 },
+        "edgeCases": { "present": false, "score": 0, "maxScore": 3 },
+        "dependencies": { "present": false, "score": 0, "maxScore": 2 },
+        "unambiguousLanguage": { "present": true, "score": 1, "maxScore": 2 }
+      },
+      "verdict": "Not Ready",
+      "missing": [
+        "No acceptance criteria defined",
+        "No error-state handling (failed payment, card declined, network timeout)",
+        "No 3DS / SCA (Strong Customer Authentication) edge case",
+        "No refund or partial-payment flow",
+        "No PCI-DSS / security scope noted",
+        "No dependency on back-end payment API named"
+      ],
+      "aiSuggestedRewriteRef": "stories.json#story-req001.aiSuggestedRewrite",
+      "model": "cached"
+    }
+  },
+
+  "clarity-check-req002-good": {
+    "scenarioId": "clarity-check-req002-good",
+    "inputHash": "req002-story-original",
+    "result": {
+      "itemId": "req-002",
+      "clarityScore": 8,
+      "scoreBreakdown": {
+        "acceptanceCriteria": { "present": true, "score": 3, "maxScore": 3 },
+        "edgeCases": { "present": true, "score": 2, "maxScore": 3 },
+        "dependencies": { "present": true, "score": 2, "maxScore": 2 },
+        "unambiguousLanguage": { "present": true, "score": 1, "maxScore": 2 }
+      },
+      "verdict": "Ready",
+      "missing": [
+        "WCAG AA accessibility compliance not mentioned (colour contrast, keyboard navigation, ARIA labels)"
+      ],
+      "aiSuggestedRewriteRef": null,
+      "aiNote": "This story is well-written and ready to build. One gap: accessibility requirements are not mentioned. Recommend adding a brief accessibility note before development starts — no full rewrite needed.",
+      "model": "cached"
+    }
+  },
+
+  "update-structure-req001-day3": {
+    "scenarioId": "update-structure-req001-day3",
+    "inputHash": "marcus-update-oct03-raw",
+    "rawInput": "Struggling with webhook signature verification. The Stripe documentation seems to contradict the SDK behaviour. Might need someone to look at this with me. Not sure how to proceed from here.",
+    "result": {
+      "itemId": "req-001",
+      "author": "m4",
+      "structuredStatus": "at_risk",
+      "workItem": "Webhook signature verification — Stripe SDK behaviour conflicts with documentation",
+      "progress": "Progressed to webhook integration stage but encountered a technical blocker with signature verification.",
+      "nextAction": "Investigate SDK source or pair with a senior developer on the verification approach.",
+      "blockerSignal": true,
+      "blockerSignalConfidence": "high",
+      "blockerSignalReason": "Update contains 'struggling', 'might need someone', and 'not sure how to proceed' — strong indicators of an undeclared blocker.",
+      "suggestedFacilitatorAction": "Request an update from Marcus and ask directly whether he is blocked and needs support.",
+      "model": "cached"
+    }
+  },
+
+  "blocker-explanation-req001": {
+    "scenarioId": "blocker-explanation-req001",
+    "inputHash": "req001-blocker-state-oct07",
+    "result": {
+      "itemId": "req-001",
+      "alertType": "hidden-blocker-detected",
+      "summary": "REQ-001 (Payment gateway integration) shows signs of a hidden blocker. Marcus Williams last updated on Day 3 mentioning difficulty with webhook verification and uncertainty about how to proceed. No further updates have been submitted in 2 days.",
+      "priorityScore": 84,
+      "priorityScoreReasons": [
+        "Blocker age (inferred): 2 days (+30)",
+        "Item priority: high (+30)",
+        "Client impact flag (+10)",
+        "Due in 3 days (+8)",
+        "No formal blocker owner (+6)"
+      ],
+      "suggestedActions": [
+        { "action": "Request Update", "description": "Send Marcus a direct update request with an escalation prompt." },
+        { "action": "Assign Helper", "description": "Assign James Patel as a technical support owner for this item." },
+        { "action": "Escalate", "description": "Raise this as a sprint-level risk in the next stand-up." }
+      ],
+      "model": "cached"
+    }
+  }
+}

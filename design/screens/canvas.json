@@ -1,0 +1,280 @@
+{
+ "v": 3,
+ "createdOnFiles": {
+  "v": 1,
+  "at": "2026-10-09T10:00:00Z"
+ },
+ "title": "Beacon Flows",
+ "launch": {
+  "view": "canvas"
+ },
+ "pages": [],
+ "designSystems": [],
+ "boards": {
+  "Overview.dc.html": {
+   "x": 0,
+   "y": 0,
+   "w": 1280,
+   "h": 940,
+   "title": "Dashboard · Sprint overview (web)",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "Main.dc.html": {
+   "x": 1360,
+   "y": 0,
+   "w": 1280,
+   "h": 940,
+   "title": "Priority Board (web)",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "TeamStatus.dc.html": {
+   "x": 0,
+   "y": 1060,
+   "w": 1280,
+   "h": 940,
+   "title": "Team status · per member (web)",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "MeetingInbox.dc.html": {
+   "x": 1360,
+   "y": 1060,
+   "w": 1280,
+   "h": 940,
+   "title": "Meeting Inbox · Extraction (web)",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "Clarity.dc.html": {
+   "x": 0,
+   "y": 2120,
+   "w": 1280,
+   "h": 940,
+   "title": "Clarity Checker (web)",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "Metrics.dc.html": {
+   "x": 1360,
+   "y": 2120,
+   "w": 1280,
+   "h": 940,
+   "title": "Metrics · Before / After (web)",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "ItemDetailFull.dc.html": {
+   "x": 1360,
+   "y": 3180,
+   "w": 1280,
+   "h": 1040,
+   "title": "Item detail · discussion + daily summary (web)",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "MemberDashboard.dc.html": {
+   "x": 0,
+   "y": 4360,
+   "w": 1280,
+   "h": 940,
+   "title": "Member dashboard · my work (web)",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "RootCause.dc.html": {
+   "x": 1360,
+   "y": 4360,
+   "w": 1280,
+   "h": 940,
+   "title": "Root-cause analytics (web)",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "BlockerAssist.dc.html": {
+   "x": 0,
+   "y": 5420,
+   "w": 1280,
+   "h": 1000,
+   "title": "Blocker assist · knowledge base + teammate help (web)",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "CreateReplicate.dc.html": {
+   "x": 1360,
+   "y": 5420,
+   "w": 1280,
+   "h": 1000,
+   "title": "Create item + replicate to Jira/ADO (web)",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "WriteBackPreview.dc.html": {
+   "x": 0,
+   "y": 6540,
+   "w": 1280,
+   "h": 860,
+   "title": "Jira/ADO write-back preview (web)",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "PriorityControl.dc.html": {
+   "x": 1360,
+   "y": 6540,
+   "w": 1280,
+   "h": 860,
+   "title": "Priority control · work-priority / pin / snooze (web)",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "Hierarchy.dc.html": {
+   "x": 0,
+   "y": 7660,
+   "w": 1280,
+   "h": 980,
+   "title": "Hierarchy & delivery forecast (web)",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "Planning.dc.html": {
+   "x": 1360,
+   "y": 7660,
+   "w": 1280,
+   "h": 980,
+   "title": "Capacity & next-sprint planning (web)",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "CrossSprint.dc.html": {
+   "x": 0,
+   "y": 8760,
+   "w": 1280,
+   "h": 980,
+   "title": "Cross-sprint analytics (web)",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "Retro.dc.html": {
+   "x": 1360,
+   "y": 8760,
+   "w": 1280,
+   "h": 980,
+   "title": "Sprint retro (web)",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "ManagerDashboard.dc.html": {
+   "x": 0,
+   "y": 9860,
+   "w": 1280,
+   "h": 940,
+   "title": "Manager dashboard · aggregate (web)",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "BugRCA.dc.html": {
+   "x": 1360,
+   "y": 9860,
+   "w": 1280,
+   "h": 940,
+   "title": "Bug RCA · draft + write-back (web)",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "UpdateComposer.dc.html": {
+   "x": 3290,
+   "y": 0,
+   "w": 390,
+   "h": 844,
+   "title": "Update Composer · voice + AI (mobile)",
+   "is_interactive": true
+  },
+  "AiTrust.dc.html": {
+   "x": 0,
+   "y": 10920,
+   "w": 1280,
+   "h": 1480,
+   "title": "AI activity & trust · failure states + audit (web)",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "MemberDetail.dc.html": {
+   "x": 1360,
+   "y": 10920,
+   "w": 1280,
+   "h": 1340,
+   "title": "Member detail · facilitator drill-down (items, AI summary, stand-up, collaboration, log)",
+   "expand": "fill",
+   "is_interactive": true
+  }
+ },
+ "order": [
+  "Overview.dc.html",
+  "Main.dc.html",
+  "TeamStatus.dc.html",
+  "MeetingInbox.dc.html",
+  "Clarity.dc.html",
+  "Metrics.dc.html",
+  "ItemDetailFull.dc.html",
+  "MemberDashboard.dc.html",
+  "RootCause.dc.html",
+  "BlockerAssist.dc.html",
+  "CreateReplicate.dc.html",
+  "WriteBackPreview.dc.html",
+  "PriorityControl.dc.html",
+  "Hierarchy.dc.html",
+  "Planning.dc.html",
+  "CrossSprint.dc.html",
+  "Retro.dc.html",
+  "ManagerDashboard.dc.html",
+  "BugRCA.dc.html",
+  "UpdateComposer.dc.html",
+  "AiTrust.dc.html",
+  "MemberDetail.dc.html"
+ ],
+ "notes": {
+  "title": {
+   "x": 0,
+   "y": -360,
+   "text": "Beacon — responsive web app (desktop) + mobile member screens",
+   "kind": "title1",
+   "maxW": 4600
+  },
+  "sWeb": {
+   "x": -300,
+   "y": 40,
+   "text": "RESPONSIVE WEB\n\nDesktop web pages with a sidebar; the same pages reflow to a fixed bottom nav on mobile. Press Play, then resize.",
+   "fill": "green",
+   "w": 250
+  },
+  "sNew": {
+   "x": -300,
+   "y": 4400,
+   "text": "ROLE DASHBOARDS + NEW FLOWS\n\nMember dashboard, root-cause, blocker assist (KB + teammate), create+replicate, Jira write-back, priority control.",
+   "fill": "blue",
+   "w": 250
+  },
+  "sPlan": {
+   "x": -300,
+   "y": 7700,
+   "text": "PLANNING · FORECAST · ANALYTICS\n\nHierarchy + delivery forecast, capacity & next-sprint planning, cross-sprint analytics, retro, manager dashboard, bug RCA.",
+   "fill": "orange",
+   "w": 250
+  },
+  "sMob": {
+   "x": 2820,
+   "y": -150,
+   "text": "MOBILE (member on a phone)\n\nMy Updates · Update Composer · compact item view. These stay phone-shaped on purpose.",
+   "fill": "teal",
+   "w": 250
+  },
+  "sTrust": {
+   "x": -300,
+   "y": 11000,
+   "text": "AI TRUST — THE ADOPTION ANSWER\n\nWhat happens when the AI is unsure, has no data, or is down; dismissal feedback; full audit trail; guardrails; pilot instrumentation.",
+   "fill": "red",
+   "w": 250
+  }
+ }
+}

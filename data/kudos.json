@@ -1,0 +1,46 @@
+[
+  {
+    "id": "kud-001",
+    "from": "m3",
+    "to": "m4",
+    "message": "Marcus — thanks for flagging the SSO dependency issue early in Sprint 1 before it became a bigger problem. Really helped me unblock the dashboard layout work.",
+    "date": "2026-09-24",
+    "sprintId": "s1",
+    "itemId": "s1-001",
+    "badgeAwarded": null,
+    "pointsAwarded": 15
+  },
+  {
+    "id": "kud-002",
+    "from": "m1",
+    "to": "m2",
+    "message": "James — exceptional work getting the CI/CD pipeline sorted so quickly in Sprint 1. The team's been able to ship with confidence ever since.",
+    "date": "2026-09-26",
+    "sprintId": "s1",
+    "itemId": "s1-004",
+    "badgeAwarded": "blocker-buster",
+    "pointsAwarded": 30
+  },
+  {
+    "id": "kud-003",
+    "from": "m4",
+    "to": "m5",
+    "message": "Aisha — the test coverage you put together for the auth flow in Sprint 1 caught a subtle session expiry bug before it hit client. Great catch.",
+    "date": "2026-09-25",
+    "sprintId": "s1",
+    "itemId": "s1-001",
+    "badgeAwarded": "blocker-buster",
+    "pointsAwarded": 30
+  },
+  {
+    "id": "kud-004",
+    "from": "m6",
+    "to": "m3",
+    "message": "Priya — your dashboard wireframes were so clear that the client approved them first time without changes. Made everyone's job easier.",
+    "date": "2026-10-02",
+    "sprintId": "s2",
+    "itemId": "req-002",
+    "badgeAwarded": null,
+    "pointsAwarded": 15
+  }
+]

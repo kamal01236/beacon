@@ -1,0 +1,74 @@
+[
+  {
+    "id": "m1",
+    "name": "Sarah Chen",
+    "role": "Delivery Manager",
+    "title": "Facilitator",
+    "email": "sarah.chen@team.internal",
+    "points": 245,
+    "badges": ["on-time-10", "story-crafter"],
+    "avatarColor": "#1B5E8A",
+    "kudosReceived": 2,
+    "kudosGiven": 3
+  },
+  {
+    "id": "m2",
+    "name": "James Patel",
+    "role": "Tech Lead",
+    "title": "Tech Lead",
+    "email": "james.patel@team.internal",
+    "points": 310,
+    "badges": ["blocker-buster", "on-time-10", "story-crafter"],
+    "avatarColor": "#2E7D52",
+    "kudosReceived": 3,
+    "kudosGiven": 1
+  },
+  {
+    "id": "m3",
+    "name": "Priya Sharma",
+    "role": "Frontend Developer",
+    "title": "Frontend Developer",
+    "email": "priya.sharma@team.internal",
+    "points": 280,
+    "badges": ["on-time-10", "early-adopter"],
+    "avatarColor": "#6A3D9A",
+    "kudosReceived": 2,
+    "kudosGiven": 2
+  },
+  {
+    "id": "m4",
+    "name": "Marcus Williams",
+    "role": "Backend Developer",
+    "title": "Backend Developer",
+    "email": "marcus.williams@team.internal",
+    "points": 195,
+    "badges": ["early-adopter"],
+    "avatarColor": "#8B4A1A",
+    "kudosReceived": 1,
+    "kudosGiven": 0
+  },
+  {
+    "id": "m5",
+    "name": "Aisha Nkosi",
+    "role": "QA Engineer",
+    "title": "QA Engineer",
+    "email": "aisha.nkosi@team.internal",
+    "points": 260,
+    "badges": ["on-time-10", "blocker-buster", "early-adopter"],
+    "avatarColor": "#1A6B6B",
+    "kudosReceived": 3,
+    "kudosGiven": 2
+  },
+  {
+    "id": "m6",
+    "name": "Tom Bradley",
+    "role": "Business Analyst",
+    "title": "Business Analyst",
+    "email": "tom.bradley@team.internal",
+    "points": 220,
+    "badges": ["on-time-10", "story-crafter"],
+    "avatarColor": "#5A4A1A",
+    "kudosReceived": 1,
+    "kudosGiven": 2
+  }
+]

@@ -1,0 +1,94 @@
+[
+  {
+    "id": "story-req001",
+    "itemId": "req-001",
+    "clarityScore": 3,
+    "scoreBreakdown": {
+      "acceptanceCriteriaPresent": false,
+      "edgeCasesDefined": false,
+      "dependenciesNamed": false,
+      "unambiguousLanguage": true
+    },
+    "originalDescription": "As a user I want to pay for my plan using a card so that I can complete checkout.",
+    "missing": [
+      "No acceptance criteria defined",
+      "No error-state handling (failed payment, card declined, network timeout)",
+      "No 3DS / SCA (Strong Customer Authentication) edge case",
+      "No refund or partial-payment flow",
+      "No PCI-DSS / security scope noted",
+      "No dependency on back-end payment API or REQ-003 (export) named"
+    ],
+    "aiSuggestedRewrite": "As a logged-in user, I want to pay for my chosen subscription plan using a credit or debit card, so that I can complete my purchase without leaving the portal.\n\n**Acceptance criteria:**\n1. The checkout page displays a Stripe-powered card input with card number, expiry, CVV and postal code fields.\n2. On successful payment, the user sees a confirmation screen and receives an email receipt within 2 minutes.\n3. If the card is declined, the user sees a clear error message ('Your card was declined. Please try a different card or contact your bank.') and can retry without losing their cart.\n4. If the network times out mid-payment, the user is shown a 'Payment status unknown — check your email for confirmation' message; the order is not duplicated.\n5. 3DS / SCA challenge is handled transparently via Stripe's automatic payment methods — user is redirected and returned to the confirmation page.\n6. The payment form is not submitted if any required field is empty; inline validation messages appear on blur.\n\n**Out of scope for this story:** Refunds and chargebacks (handled in a separate admin story). Saved payment methods (Sprint 3 backlog).\n\n**Dependencies:** Requires Stripe API credentials (ACT-001) and back-end payment endpoint (depends on REQ-001 API layer).\n\n**Security note:** Card data never touches our servers — Stripe.js tokenises in-browser. PCI SAQ-A applies.",
+    "reviewedBy": null,
+    "rewriteApplied": false,
+    "demoRole": "PRIMARY — shown as the vague story that the clarity checker rewrites. Clarity score 3/10 is the lowest in the sprint."
+  },
+  {
+    "id": "story-req002",
+    "itemId": "req-002",
+    "clarityScore": 8,
+    "scoreBreakdown": {
+      "acceptanceCriteriaPresent": true,
+      "edgeCasesDefined": true,
+      "dependenciesNamed": true,
+      "unambiguousLanguage": true
+    },
+    "originalDescription": "As a logged-in user I want to see my account summary, recent transactions, and active plans on one screen, so that I don't need to navigate between three separate pages to get an overview of my account.\n\n**Acceptance criteria:**\n1. The dashboard loads in under 2 seconds on a standard broadband connection.\n2. Account summary card shows: full name, account tier, account number (masked), and balance.\n3. Recent transactions list shows the last 10 transactions with date, description, amount and status. Pagination loads more on scroll.\n4. Active plans widget shows plan name, renewal date, and a 'Manage' CTA for each active plan.\n5. On mobile (< 768px), the three sections stack vertically in the order: summary, plans, transactions.\n6. Loading skeleton is shown for each section until data resolves. If a section's data fails, it shows an inline error with a 'Retry' link — other sections remain visible.\n\n**Empty state:** If the user has no transactions, show 'No transactions yet' with a link to the plans page.\n\n**Dependencies:** SSO (S1-001). Dashboard layout shell (S1-002). Transaction and plan APIs (existing v2 endpoints, documented in ACT-003).",
+    "missing": [
+      "WCAG AA accessibility compliance not mentioned (colour contrast, keyboard navigation, ARIA labels for screen readers)"
+    ],
+    "aiSuggestedRewrite": null,
+    "aiNote": "Story scores 8/10. One gap: accessibility requirements are not mentioned. Flagging for the author's attention — no full rewrite needed.",
+    "reviewedBy": "m3",
+    "rewriteApplied": false,
+    "demoRole": "REFERENCE — shown as the well-written story. Demonstrates what a 'ready' story looks like. Minor accessibility gap is the AI's only flag."
+  },
+  {
+    "id": "story-req003",
+    "itemId": "req-003",
+    "clarityScore": 5,
+    "scoreBreakdown": {
+      "acceptanceCriteriaPresent": true,
+      "edgeCasesDefined": false,
+      "dependenciesNamed": true,
+      "unambiguousLanguage": true
+    },
+    "originalDescription": "Users should be able to export their transaction history and account summary as a PDF document.\n\n**Acceptance criteria:**\n1. An 'Export to PDF' button appears on the dashboard.\n2. Clicking the button generates a PDF of the visible transaction history and account summary.\n3. The PDF downloads automatically with the filename 'AccountSummary_<date>.pdf'.\n4. The PDF includes the Apex Financial logo and portal branding.\n\n**Dependencies:** Requires req-002 (dashboard data) to be complete.",
+    "missing": [
+      "Large transaction history edge case not defined (what happens with 10,000+ transactions — truncate, paginate, or warn?)",
+      "Failure state missing (what does the user see if PDF generation fails?)",
+      "Accessibility: the export button needs an accessible label",
+      "Mobile behaviour: download may behave differently on iOS — not mentioned"
+    ],
+    "aiSuggestedRewrite": "Users should be able to export their transaction history and account summary as a PDF document, so that they have a portable record for their own filing.\n\n**Acceptance criteria:**\n1. An 'Export to PDF' button appears on the dashboard, with aria-label 'Export account summary as PDF'.\n2. The PDF includes: account summary (matching the dashboard widget), and up to 100 most recent transactions with date, description, amount and status.\n3. If the account has more than 100 transactions, the PDF shows the most recent 100 with a note: 'Showing 100 of N transactions.'\n4. The file downloads with the filename 'ApexPortal_AccountSummary_YYYY-MM-DD.pdf'.\n5. The PDF includes the Apex Financial logo, the user's name and masked account number, and a 'Generated on' timestamp.\n6. If PDF generation fails, the button shows 'Export failed — please try again' and logs the error. The user can retry.\n7. On iOS Safari, the PDF opens in a new tab (browser limitation). A tooltip on the button informs iOS users of this behaviour.\n\n**Dependencies:** req-002 (dashboard data and transaction list component).",
+    "reviewedBy": null,
+    "rewriteApplied": false,
+    "demoRole": "SECONDARY — medium-quality story used to show partial clarity issues. Four gaps identified; AI offers a rewrite."
+  },
+  {
+    "id": "story-req004",
+    "itemId": "req-004",
+    "clarityScore": 2,
+    "scoreBreakdown": {
+      "acceptanceCriteriaPresent": false,
+      "edgeCasesDefined": false,
+      "dependenciesNamed": false,
+      "unambiguousLanguage": false
+    },
+    "originalDescription": "Build notification service.",
+    "missing": [
+      "No user story format — missing 'As a… I want… so that…'",
+      "No acceptance criteria",
+      "No notification channels specified (email? in-app? SMS? push?)",
+      "No trigger events defined (what actions send a notification?)",
+      "No unsubscribe / preference management mentioned",
+      "No dependency on authentication service (S1-001) named",
+      "No volume or latency expectations stated",
+      "Scope completely undefined — could mean anything from a simple email to a full notification platform"
+    ],
+    "aiSuggestedRewrite": "As a logged-in user, I want to receive timely notifications about important changes to my account (payment confirmations, plan renewals and failed payment alerts), so that I stay informed without having to check the portal constantly.\n\n**Acceptance criteria:**\n1. The following events trigger a notification: (a) successful payment, (b) failed payment, (c) plan renewal within 7 days, (d) plan renewal completed.\n2. Notifications are delivered via email to the address on the user's account.\n3. In-app: a notification bell icon in the portal header shows an unread count badge. Clicking opens a dropdown of the last 20 notifications.\n4. Each notification shows: event type, brief description, timestamp, and a link to the relevant page.\n5. Users can manage notification preferences (opt out per event type) in Account Settings.\n6. Email delivery latency: under 60 seconds for payment events; under 5 minutes for renewal reminders.\n7. Unsubscribe link is present in every email (CAN-SPAM / GDPR compliance).\n\n**Out of scope:** SMS, push notifications, and admin-initiated broadcast messages (Sprint 3+).\n\n**Dependencies:** SSO / user account service (S1-001). Payment gateway (REQ-001) for payment event triggers.",
+    "reviewedBy": null,
+    "rewriteApplied": false,
+    "demoRole": "SPILLOVER STORY — lowest clarity score (2/10). Used to show that a carried-over item still needs definition work before it can be built. Good contrast with req-002."
+  }
+]

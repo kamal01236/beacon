@@ -1,0 +1,29 @@
+[
+  {
+    "id": "mtg-001",
+    "title": "Apex Financial — Client Portal Update",
+    "date": "2026-10-01",
+    "time": "10:00",
+    "duration": 45,
+    "client": "Apex Financial Services",
+    "attendees": [
+      { "name": "Sarah Chen", "org": "internal", "role": "Delivery Manager" },
+      { "name": "Tom Bradley", "org": "internal", "role": "Business Analyst" },
+      { "name": "Raj Mehta", "org": "Apex Financial", "role": "Product Owner" },
+      { "name": "Claire Oduya", "org": "Apex Financial", "role": "IT Lead" }
+    ],
+    "rawNotes": "Call with Apex Financial — client portal update — 1 Oct 2026\nAttendees: Sarah Chen (DM), Tom Bradley (BA), Raj Mehta (Apex), Claire Oduya (Apex IT)\n\nRaj confirmed that Apex has selected Stripe as the payment provider going forward. Claire mentioned that the integration team cannot start work until they receive API credentials and sandbox access keys from our side — Sarah said she would send these over by end of Wednesday. Tom agreed to reach out to Claire's team by Thursday to find a suitable date for the UAT session, targeting the week of 13 October. The team agreed that the production deployment window will be Friday 10 October after 6pm to minimise client impact. Claire raised a concern about Stripe's API rate limits on the sandbox tier potentially causing issues during load testing — James to monitor and report back.",
+    "extractedItems": ["act-001", "act-002", "dec-001", "dec-002", "rsk-001"],
+    "extractionStatus": "confirmed",
+    "extractionConfirmedBy": "m1",
+    "extractionConfirmedDate": "2026-10-01",
+    "aiExtractionAccuracy": {
+      "itemsExtracted": 5,
+      "itemsAcceptedWithoutEdit": 5,
+      "itemsEdited": 0,
+      "itemsRejected": 0,
+      "accuracy": 1.0
+    },
+    "demoRole": "PRIMARY — the meeting whose raw notes are pasted into the Meeting Inbox screen to demonstrate extraction. All 180 words are paste-ready."
+  }
+]

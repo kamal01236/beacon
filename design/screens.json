@@ -1,0 +1,37 @@
+{
+  "_comment": "Screen registry. role+active drive the ONE canonical navigation (see apply-theme.mjs). nav:false = modal or phone capture screen with no sidebar. lens = presents as part of a merged screen. See SOLUTION-AUDIT.md §3.",
+
+  "Overview.dc.html":         { "role": "facilitator", "active": "overview" },
+  "Main.dc.html":             { "role": "facilitator", "active": "board" },
+  "MeetingInbox.dc.html":     { "role": "facilitator", "active": "inbox" },
+  "Hierarchy.dc.html":        { "role": "facilitator", "active": "delivery" },
+
+  "TeamStatus.dc.html":       { "role": "facilitator", "active": "people",   "lens": ["People", "Today"] },
+  "Planning.dc.html":         { "role": "facilitator", "active": "people",   "lens": ["People", "Capacity & next sprint"] },
+
+  "RootCause.dc.html":        { "role": "facilitator", "active": "insights", "lens": ["Insights", "Root cause"] },
+  "CrossSprint.dc.html":      { "role": "facilitator", "active": "insights", "lens": ["Insights", "Trends"] },
+  "Metrics.dc.html":          { "role": "facilitator", "active": "insights", "lens": ["Insights", "Impact"] },
+
+  "Retro.dc.html":            { "role": "facilitator", "active": "retro" },
+  "AiTrust.dc.html":          { "role": "facilitator", "active": "none", "_why": "AI activity, failure states and audit trail — closes SOLUTION-AUDIT.md §6.1" },
+
+  "ItemDetailFull.dc.html":   { "role": "facilitator", "active": "board" },
+  "MemberDetail.dc.html":     { "role": "facilitator", "active": "people", "_why": "Facilitator drill-down on one team member (from TeamStatus): assigned items + status/progress/blockers, AI daily summary, the member's own yesterday/today/tomorrow stand-up, collaboration cross-links, update cadence, and a recorded contribution log. Detail view — back-link, no sidebar." },
+  "Clarity.dc.html":          { "role": "facilitator", "active": "board" },
+  "BlockerAssist.dc.html":    { "role": "facilitator", "active": "board" },
+  "BugRCA.dc.html":           { "role": "facilitator", "active": "board" },
+  "CreateReplicate.dc.html":  { "role": "facilitator", "active": "board" },
+
+  "ManagerDashboard.dc.html": { "role": "manager",     "active": "overview" },
+  "MemberDashboard.dc.html":  { "role": "member",      "active": "mywork" },
+
+  "WriteBackPreview.dc.html": { "nav": false, "kind": "modal" },
+  "PriorityControl.dc.html":  { "nav": false, "kind": "modal" },
+  "UpdateComposer.dc.html":   { "nav": false, "kind": "phone-capture", "_why": "Voice-to-AI daily standup capture — the one intentional mobile task flow, reached from MemberDashboard's Update buttons" },
+
+  "MyUpdates.dc.html":        { "nav": false, "kind": "demoted", "_why": "Mobile twin of MemberDashboard (strict subset) — redundant. The responsive MemberDashboard IS the member's 'My work' view and becomes a bottom-bar layout on phones. SOLUTION-AUDIT.md §3." },
+  "ItemDetail.dc.html":       { "nav": false, "kind": "demoted", "_why": "Mobile twin of ItemDetailFull, which already carries the Day-3 AI-detection timeline in a responsive app shell. SOLUTION-AUDIT.md §3." },
+
+  "Team.dc.html":             { "nav": false, "kind": "demoted", "_why": "Recognition / leaderboard — cut from nav and demo path, SOLUTION-AUDIT.md §5" }
+}
