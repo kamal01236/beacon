@@ -9,6 +9,25 @@ honestly, and keeps the human in the loop on every AI action.
 The product flows now live **in code** (this Next.js app). The design canvas under
 `design/` is the earlier source and is being retired.
 
+## Architecture: a background agent (not just a dashboard)
+
+Beacon is really an **autonomous agent** that runs headless beside the tracker.
+It runs on a **schedule** (default every 60 min) and on **events** (Jira/ADO
+webhooks, git events, user actions), reading Jira/Azure DevOps + git history + the
+knowledge base with **sprint-by-sprint memory**. Each run it assesses every item,
+classifies problems into signals (hidden blocker · missing update · help needed ·
+overdue · at risk), proposes a prioritized next action, and — when it can't resolve
+something from the data — **raises an input request to the responsible person and
+re-asks each run until answered.** It never writes to the tracker on its own;
+findings go to the agent's own store, the dashboard reads from there, and any
+write-back is previewed and human-approved.
+
+The full model is in **[AGENT-ARCHITECTURE.md](AGENT-ARCHITECTURE.md)**. In code:
+`lib/agent.ts` (runs / signals / requests), `app/agent/page.tsx` (the agent surface),
+`lib/priorityScore.ts` (the explainable score). In this prototype the agent derives
+its findings deterministically from the seed data so the UI shows exactly what the
+live agent would produce.
+
 ## Run
 
 ```bash
@@ -33,6 +52,7 @@ app/
   layout.tsx            RoleProvider + AppShell wrap every page
   globals.css           the whole design system (ported from design/beacon.css)
   overview/             facilitator landing — "cannot deliver" roll-up + attention
+  agent/                the agent surface — last run, input-request loop, assessments
   board/                priority board — ranked by explainable score (?status=, ?min=, ?type=)
   people/               team status ; people/[memberId] = facilitator member drill-down
   item/[id]/            item detail — the AI hidden-blocker timeline
@@ -50,8 +70,8 @@ the number can never disagree with the chips shown beside it. Seed scores were
 reconciled to this invariant (Phase 0).
 
 ## Roles
-- **Facilitator** (Sarah) — Overview · Board · Inbox · Delivery · People · Insights · Retro
-- **Manager** (Dana, read-only) — Overview · Delivery · People · Insights
-- **Member** (Marcus) — My work · Board · Get help · My trends
+- **Facilitator** (Sarah) — Overview · Agent · Board · Inbox · Delivery · People · Insights · Retro
+- **Manager** (Dana, read-only) — Overview · Agent · Delivery · People · Insights
+- **Member** (Marcus) — My work · Board · Get help · My trends (the agent reaches members through input-request banners)
 
 Switch between them from the persona menu in the header.

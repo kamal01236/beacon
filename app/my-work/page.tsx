@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { PERSONA, memberById, itemsOwnedBy, progressFor, updatesBy } from "@/lib/data";
 import { attentionScore } from "@/lib/priorityScore";
+import { getRequests } from "@/lib/agent";
 import { TypeTag, StatusPill } from "@/components/ui";
 
 export default function MyWorkPage() {
@@ -8,16 +9,27 @@ export default function MyWorkPage() {
   const owned = itemsOwnedBy(me.id);
   const ups = updatesBy(me.id);
   const blocked = owned.filter((i) => i.status === "blocked");
+  const myRequest = getRequests().find((r) => r.toMemberId === me.id);
 
   return (
     <>
       <h1 className="h1">Good morning, {me.name.split(" ")[0]}</h1>
       <div className="sub">{owned.length} item(s) assigned · {blocked.length} blocked</div>
 
-      <div className="banner bad" style={{ marginTop: 14 }}>
-        <div className="bt"><b>Sarah requested an update on REQ-001.</b> It&apos;s your top item and it&apos;s blocked — add today&apos;s update or ask for help.</div>
-        <div className="btnrow"><Link className="btn d sm" href="/get-help">Get help</Link></div>
-      </div>
+      {myRequest ? (
+        <div className="banner ai" style={{ marginTop: 14 }}>
+          <div className="bt"><b>Beacon agent needs your input.</b> {myRequest.question}</div>
+          <div className="btnrow">
+            <Link className="btn p sm" href={`/item/${myRequest.itemId}`}>Answer</Link>
+            <Link className="btn s sm" href="/get-help">Get help</Link>
+          </div>
+        </div>
+      ) : (
+        <div className="banner bad" style={{ marginTop: 14 }}>
+          <div className="bt"><b>REQ-001 is blocked.</b> It&apos;s your top item — add today&apos;s update or ask for help.</div>
+          <div className="btnrow"><Link className="btn d sm" href="/get-help">Get help</Link></div>
+        </div>
+      )}
 
       <section className="kpis" style={{ marginTop: 16 }}>
         <div className="kpi"><div className="klab">My items</div><div className="kval">{owned.length}</div></div>

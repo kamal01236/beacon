@@ -44,6 +44,34 @@ One platform with one data model, not six separate tools:
 
 **Pitch line:** *Nothing agreed with the client gets lost, every item has an owner and a daily pulse, and unclear requirements get fixed before they cause delay.*
 
+### How it works — a background agent, not a dashboard
+
+Beacon is delivered as an **autonomous agent** that runs headless beside Jira /
+Azure DevOps (TFS) — the dashboard is only the window onto what the agent has
+already computed. The agent:
+
+- **Runs on a schedule** (default every 60 min) **and on events** (tracker
+  webhooks, git events, a member submitting an update), so the picture is always
+  current before anyone opens it.
+- **Reads broadly, with memory:** the tracker + its full change history, **git
+  history**, the **knowledge base**, and its own **sprint-by-sprint memory** of how
+  past items were resolved and who helped.
+- **Assesses every item** each run and classifies problems into signals — *hidden
+  blocker, missing update, help needed, knowledge needed, overdue, at risk* — each
+  with evidence, a cited source, a confidence, and a **proposed next action**,
+  ranked by the explainable attention score.
+- **Closes the loop with people:** when it can't resolve something from the data,
+  it **asks the responsible person in the UI** ("REQ-004 has no update for 2 days —
+  what's blocking you?") and **re-asks each run until answered**, escalating to the
+  facilitator. The answer feeds the next assessment.
+- **Proposes, never imposes:** findings are written to the agent's own store (which
+  every role's view reads from); the tracker stays the system of record and any
+  write-back is previewed and human-approved. The agent can also **draft new items**
+  (typed, owned, dated, prioritized) for approval when it spots untracked work.
+
+Full detail: **[AGENT-ARCHITECTURE.md](./AGENT-ARCHITECTURE.md)**. This reframes the
+five AI features below as *capabilities of one agent* rather than separate tools.
+
 ### Positioning — a companion to Jira / Azure DevOps, not a replacement
 
 Jira and TFS/Azure DevOps are where work is *recorded*. They are powerful but too heavy for a clean, day-to-day **organizational overview** — the state of the sprint, who's blocked, what's at risk, what was agreed. Beacon is a **thin companion layer on top** that provides exactly that overview and adds the AI value Jira/TFS don't.

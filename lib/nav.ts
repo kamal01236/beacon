@@ -24,11 +24,14 @@ export const ICON: Record<string, string> = {
   mywork: '<path d="M4 7h16v13H4z"/><path d="M9 7V4h6v3"/><path d="M4 12h16"/>',
   help:
     '<circle cx="12" cy="12" r="9"/><path d="M9.3 9.2A2.8 2.8 0 0 1 14.6 10c0 1.9-2.6 2-2.6 4"/><circle cx="12" cy="17.6" r="1"/>',
+  agent:
+    '<circle cx="12" cy="12" r="2.4"/><path d="M12 6.2a5.8 5.8 0 0 1 5.8 5.8"/><path d="M12 3a9 9 0 0 1 9 9"/><path d="M12 6.2A5.8 5.8 0 0 0 6.2 12"/><path d="M12 3a9 9 0 0 0-9 9"/>',
 };
 
 export const NAV: Record<Role, NavItem[]> = {
   facilitator: [
     { key: "overview", label: "Overview", href: "/overview" },
+    { key: "agent", label: "Agent", href: "/agent" },
     { key: "board", label: "Board", href: "/board" },
     { key: "inbox", label: "Inbox", href: "/inbox", badge: "5" },
     { key: "delivery", label: "Delivery", href: "/delivery" },
@@ -38,6 +41,7 @@ export const NAV: Record<Role, NavItem[]> = {
   ],
   manager: [
     { key: "overview", label: "Overview", href: "/manager" },
+    { key: "agent", label: "Agent", href: "/agent" },
     { key: "delivery", label: "Delivery", href: "/delivery" },
     { key: "people", label: "People", href: "/people" },
     { key: "insights", label: "Insights", href: "/insights" },
