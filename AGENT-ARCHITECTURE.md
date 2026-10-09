@@ -58,40 +58,48 @@ resolved it with the raw-body middleware fix").
 For every active item and owner, the agent forms an assessment and classifies any
 problem into a **signal**:
 
-| Signal | Means | Example |
+| Signal | Means | Example (seed) |
 |---|---|---|
-| **Hidden blocker** | distress / struggle language or a stall in the update, with no blocked flag set | REQ-001 day-3 wording flagged before it was raised |
-| **Missing update** | an in-flight item (in progress / blocked / spillover) that has gone quiet past the daily cadence | REQ-004 — no update for 2+ days |
-| **Help needed** | a known blocker that needs a person to act | suggests a helper from history + a KB reference |
-| **Knowledge needed** | the owner likely needs a reference or a prior story | attaches the runbook / similar past item |
-| **Overdue** | past due date, weighted by client impact | ACT-001 — 5 days overdue, client impact |
-| **At risk** | high attention score but no explicit blocker yet | trending toward trouble |
+| **Hidden blocker** | the latest update *reads* as blocked (phrase detector, `lib/detect.ts`) but no blocker is raised | a member writes "not sure how to proceed" on REQ-004 |
+| **Blocked — needs help** | formally blocked; suggests a helper and a runbook | REQ-001 — wording read as blocked on day 3, raised day 6 |
+| **Cannot deliver** | its own status looks fine, but something upstream is blocked | REQ-027 "in progress", waits on REQ-001 |
+| **Overdue** | status says overdue | ACT-001 — 5 days, client impact |
+| **Status out of date** | past due while the status still says in progress / to do / monitoring | ACT-002 — UAT booked on day 5, still "in progress" |
+| **Missing update** | in-flight work quiet for 2+ days | REQ-004 — no update this sprint |
+| **At risk** | high attention score with no single explanation above (a prediction) | — |
 
-Each signal carries: a plain-language summary, the **evidence** it was drawn from,
-the **source connector(s)**, a **confidence**, and one or more **proposed next
-actions** (request update · assign helper · attach KB · raise blocker · create
-task · reprioritize).
+Each signal carries a plain-language summary, the **evidence** (quoted update text,
+matched phrases, fields), its **source**, a **confidence**, and **proposals** —
+previewed tracker changes (raise blocker · comment to pair a helper · link a runbook ·
+mark "is blocked by" · ask for a new date).
+
+**Confidence is computed.** Signals read straight from tracker fields are labelled
+*fact*. Inferred ones show a percentage with its basis (detector baseline + match
+strength, or baseline + independent warning drivers); after 3+ team decisions on that
+signal type, the observed accept rate is blended in. Dismissals therefore lower the
+confidence of the rule that keeps being wrong.
 
 ### The attention score
-Prioritization is an **explainable score**: the number is the *sum of its reasons*
-(`lib/priorityScore.ts`), never a black box. The agent uses it to rank what it
+The score is the sum of 14 named rules over the item's facts (`lib/facts.ts` →
+`lib/priorityScore.ts`), never stored, never typed in. The agent uses it to rank what it
 surfaces, and the UI shows the reasons beside the number everywhere.
 
 ## 6. The human-in-the-loop input requests
 
 This is the heart of the design. When the agent cannot resolve something from the
-data — it doesn't know *why* an item is stuck, or whether a quiet item is blocked —
-it raises an **AgentRequest**: a direct question to the responsible person, shown
-in their view.
+data, it raises an **AgentRequest**: a direct question to one person, shown in their view.
 
-- "REQ-004 has no update for 2 days — what's the current status, and are you
-  blocked?"
-- "What exactly is blocking REQ-001, and what do you need to unblock it — a person,
-  access, or a reference?"
+- **Update requests** — "REQ-004 has had no update for 7 days — what's the status, and
+  are you blocked?" Answered by posting an update; re-asked at each daily run until then.
+- **Author-first confirmation** — when an update *reads* as blocked, the agent asks only
+  its author: "Are you blocked?" **Yes** approves the previewed change (status → Blocked
+  with their words as the blocker note); **No** dismisses the concern. Nobody else is asked
+  to act on someone's wording before the author has answered.
 
-If it goes unanswered, the agent **re-asks on the next run** (tracking a re-ask
-count) and escalates to the facilitator, **until it gets an answer it can act on.**
-The answer feeds back into the agent's next assessment, so the loop closes.
+Every human response is an event in one append-only log (`lib/events.ts`): updates,
+accept / dismiss (with reason) / snooze, approve / reject, retro adoptions, helpful votes,
+and undo. The world the agent assesses next is the tracker data plus those events
+(`lib/world.ts`), so the loop closes, and the same log produces the adoption metrics.
 
 ## 7. What it can propose to create
 
@@ -121,17 +129,19 @@ anything. The tracker is written only through the approved write-back path.
 
 ## 9. Where this lives in the code
 
-- `lib/agent.ts` — the agent: `getRun()`, `getSignals()`, `getRequests()`. In this
-  prototype it derives findings deterministically from the seed (`data/*.json`) +
-  the frozen demo clock, so the dashboard shows exactly what the real agent would.
-- `app/agent/page.tsx` — the agent surface: last run, the input-request loop, and
-  assessments with proposed next actions.
-- `app/my-work/page.tsx` — a member sees the agent's question to them inline.
-- `lib/priorityScore.ts` — the explainable attention score.
+- `lib/facts.ts` — per-item facts (dates, cadence, blocker timeline, language, dependency graph).
+- `lib/priorityScore.ts` — the 14-rule attention score.
+- `lib/detect.ts` — the update-language detector and root-cause categories.
+- `lib/agent.ts` — `getSignals()`, `getRequests()`, `getRun()`, `detections()`, helper and runbook matching, computed confidence.
+- `lib/insights.ts` — daily brief, delivery roll-up, root causes, retro themes, adoption.
+- `lib/events.ts`, `lib/world.ts`, `lib/useWorld.ts` — the decision log and seed + events → world.
+- `components/hic.tsx` — signal cards, proposal approval, update form, requests, activity log, outbox.
+- `app/agent/page.tsx` — the agent surface; `app/my-work/page.tsx` — a member answers the agent.
 
-Not yet wired (prototype): the live connectors (Jira/ADO, git, KB), the real
-scheduler/webhooks, and the LLM calls behind detection (a cache lives in
-`data/ai-cache.json`). §10 below covers the connector work.
+Not yet wired (prototype): live connectors (Jira/ADO, git), a server-side store, the
+real scheduler/webhooks, and an LLM detector. The prototype stores decisions in the
+browser and runs the agent on render. README → Roadmap phases 3–4; §10 below covers
+the connector work.
 
 ## 10. Integration & write-back (Jira / Azure DevOps)
 

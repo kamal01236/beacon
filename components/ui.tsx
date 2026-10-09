@@ -1,6 +1,5 @@
 import Link from "next/link";
 import type { Item, Member, ItemStatus, AttentionScore } from "@/lib/types";
-import { attentionScore } from "@/lib/priorityScore";
 
 export function Avatar({ member, size }: { member?: Member; size?: "sm" | "lg" }) {
   if (!member) return <span className={`av${size ? " " + size : ""}`}>—</span>;
@@ -30,6 +29,7 @@ const STATUS: Record<ItemStatus, { cls: string; label: string }> = {
   in_progress: { cls: "n", label: "In progress" },
   todo: { cls: "n", label: "To do" },
   monitoring: { cls: "a", label: "Monitoring" },
+  cancelled: { cls: "n", label: "Cancelled" },
 };
 
 export function StatusPill({ status }: { status: ItemStatus }) {
@@ -45,6 +45,7 @@ export function ScoreReasons({
   score: AttentionScore;
   showSum?: boolean;
 }) {
+  if (score.reasons.length === 0) return <div className="reasons"><span className="sum">Done — no attention needed</span></div>;
   return (
     <div>
       <span className={`score ${score.band === "high" ? "hi" : score.band === "medium" ? "md" : "lo"}`}>
@@ -63,10 +64,6 @@ export function ScoreReasons({
   );
 }
 
-export function ScoreFor({ item }: { item: Item }) {
-  return <ScoreReasons score={attentionScore(item)} />;
-}
-
 export function Crumb({ href, label }: { href: string; label: string }) {
   return (
     <Link className="crumb" href={href}>
@@ -78,33 +75,32 @@ export function Crumb({ href, label }: { href: string; label: string }) {
   );
 }
 
-/** The AI block: output + confidence + cited source + Accept / Edit / Dismiss. */
+/**
+ * A generated summary block. It is assembled from data by rules, so it carries
+ * what it was built from (`cite`) rather than a confidence number.
+ */
 export function AiBlock({
   title,
-  confidence,
-  low,
+  tag = "generated from data",
   cite,
   children,
+  footer,
 }: {
   title: string;
-  confidence: number;
-  low?: boolean;
+  tag?: string;
   cite?: string;
   children: React.ReactNode;
+  footer?: React.ReactNode;
 }) {
   return (
     <div className="ai">
       <div className="aihead">
         <div className="ct">{title}</div>
-        <span className={`conf${low ? " low" : ""}`}>confidence {confidence}%</span>
+        <span className="conf fact">{tag}</span>
       </div>
       <div className="aiout">{children}</div>
       {cite && <div className="cite">{cite}</div>}
-      <div className="aiact">
-        <button className="btn p sm" type="button">{low ? "Review" : "Looks right"}</button>
-        <button className="btn s sm" type="button">Edit</button>
-        <button className="btn g sm" type="button">Dismiss</button>
-      </div>
+      {footer}
     </div>
   );
 }

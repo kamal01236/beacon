@@ -112,21 +112,13 @@ without approval; predictive completion dates; the native Teams/Slack channel.
 
 ---
 
-## D. Next steps (phased)
+## D. Next steps
 
-- **Phase A — Deploy the demo.** Pick Pages (static UI) and/or Vercel (full app).
-  If Pages: apply the Option-1 changes + Actions workflow. If Vercel: import the repo.
-- **Phase B — Agent state store + API.** Add `app/api/agent/run` and `/answer`
-  routes; introduce a state store (start with SQLite/JSON, interface it so it swaps
-  to Postgres); have the UI read runs/signals/requests from the store instead of
-  recomputing in `lib/agent.ts`.
-- **Phase C — Triggers.** Wire the scheduler (Vercel Cron or GitHub Actions cron),
-  a webhook receiver, and the user-action endpoint.
-- **Phase D — Memory.** Sprint digests + a vector index of the repo and KB;
-  retrieval-grounded suggestions ("resolved like this in Sprint 2").
-- **Phase E — Connectors + write-back.** Real Jira/ADO + git + KB adapters behind
-  a `ticketSource`-style interface (see AGENT-ARCHITECTURE.md §10); approved write-back.
-
-The current `lib/agent.ts` already defines the shapes (runs, signals, requests) and
-derives them from data — Phase B is "persist these and serve them over an API"
-rather than a redesign.
+The phased plan lives in one place — **README → Roadmap**. For runtime, phase 3
+("Live agent on WSL") means: move the decision log (`lib/events.ts`, today in the
+browser) to a server-side store behind the same event shapes (SQLite first, an
+interface so it swaps to Postgres); add `app/api/agent/run` and `/events` routes;
+run the agent on a schedule and on events instead of on render; keep daily snapshots
+for burndown, cumulative flow and cycle time. `lib/agent.ts` and `lib/world.ts`
+already define the shapes, so this is "persist and serve", not a redesign. Phase 4
+adds the connectors and approved write-back (AGENT-ARCHITECTURE.md §10).

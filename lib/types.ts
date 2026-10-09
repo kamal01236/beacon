@@ -12,7 +12,8 @@ export type ItemStatus =
   | "spillover"
   | "confirmed"
   | "resolved"
-  | "monitoring";
+  | "monitoring"
+  | "cancelled";
 
 export interface Member {
   id: string;
@@ -60,25 +61,25 @@ export interface Item {
   clarityScore: number | null;
   completedDate?: string;
   resolvedDate?: string;
-  priorityScore?: number;
-  priorityReasons?: string[];
+  blockerRaisedDate?: string; // when the blocker was formally raised in the tracker
+  mitigationPlan?: string;
 }
 
 export interface Update {
   id: string;
   itemId: string;
   sprintId: string;
-  author: string;
+  author: string | null; // null on a "missing" placeholder (no update was posted)
   date: string;
   sprintDay: number;
-  statusRaw: string;
-  statusStructured: ItemStatus;
-  progressText: string;
+  statusRaw?: string | null;
+  statusStructured: ItemStatus | "missing";
+  progressText: string | null;
   nextAction: string | null;
-  blockerText: string | null;
-  blockerSignal: boolean;
-  aiStructured: boolean;
-  submittedOnTime: boolean;
+  blockerText?: string | null;
+  aiStructured?: boolean;
+  submittedOnTime?: boolean;
+  source?: "seed" | "beacon"; // "beacon" = posted through Beacon in this session
 }
 
 export interface Kudos {
@@ -107,7 +108,8 @@ export interface Story {
 
 // A single explainable contribution to an item's attention score.
 export interface ScoreReason {
-  label: string; // human text, e.g. "Blocker age: 2 days"
+  rule: string; // the scoring rule that produced it (see RULES in priorityScore.ts)
+  label: string; // human text, e.g. "Blocked for 2 days"
   points: number; // signed contribution
   warn: boolean; // true for blocker / overdue / risk drivers (rendered in red)
 }

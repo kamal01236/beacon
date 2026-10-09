@@ -31,7 +31,7 @@ export function StatusDonut({ slices }: { slices: StatusSlice[] }) {
                 strokeDasharray={`${seg} ${C - seg}`}
                 strokeDashoffset={-acc * C}
               >
-                <title>{s.label}: {s.count}</title>
+                <title>{`${s.label}: ${s.count}`}</title>
               </circle>
             );
             acc += frac;
@@ -156,6 +156,7 @@ export function DeltaGrid({ deltas }: { deltas: Delta[] }) {
             <span className={`arr ${d.improved ? "up" : "down"}`} aria-hidden>→</span>
             <span className={`now ${d.improved ? "good" : "bad"}`}>{d.after}</span>
           </div>
+          <div className="delta-s">{d.source}</div>
         </div>
       ))}
     </div>
@@ -169,11 +170,11 @@ export function TeamPulseCard({ pulse }: { pulse: TeamPulse }) {
       <div className="ct">Team pulse <span className="mut">momentum, not a ranking</span></div>
 
       <div className="pulse-top">
-        <ProgressRing pct={pulse.participationPct} size={62} label="updated" />
+        <ProgressRing pct={pulse.participationPct} size={62} label="posting" />
         <div className="pulse-stats">
           <div className="pstat">
-            <b>{pulse.updatedToday}/{pulse.teamSize}</b>
-            <span>updated today</span>
+            <b>{pulse.fresh}/{pulse.expected}</b>
+            <span>with work in flight posted since yesterday</span>
           </div>
           <div className="pstat">
             <b>🔥 {pulse.streakDays}</b>

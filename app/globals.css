@@ -262,6 +262,38 @@ svg.ring .ringnum{font-size:13px;font-weight:800;fill:var(--ink);font-variant-nu
 .kudo-h{font-size:var(--t-label);font-weight:800;color:var(--ink-2)}
 .kudo-m{font-size:12px;color:var(--ink-3);line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 
+.delta-s{font-size:10.5px;color:var(--ink-4);margin-top:4px;line-height:1.35}
+
+/* --- 16c. Human in control: decisions, proposals, log ------------------ */
+select.inp{appearance:auto;cursor:pointer}
+.decide{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px}
+.decide .inp{width:auto;padding:6px 9px;font-size:12px}
+.card.decided{background:var(--surface-2);box-shadow:none}
+.card.decided .ct{color:var(--ink-3)}
+.stamp{font-size:var(--t-meta);font-weight:700;color:var(--ink-3)}
+.stamp b{color:var(--ink)}
+.link{background:none;border:0;padding:0;font:inherit;font-weight:800;color:var(--ai);cursor:pointer;text-decoration:underline}
+details.basis{margin-top:8px;font-size:var(--t-meta);color:var(--ink-3)}
+details.basis summary{cursor:pointer;font-weight:700;color:var(--ai);width:fit-content}
+details.basis ul{margin:6px 0 0;padding-left:18px;line-height:1.55}
+.conf.fact{background:#EDF1F6;color:var(--ink-2);border-color:var(--line)}
+.props{margin-top:12px;border-top:1px dashed var(--line-strong);padding-top:10px;display:flex;flex-direction:column;gap:8px}
+.prop{display:flex;gap:10px;align-items:flex-start;flex-wrap:wrap}
+.prop .pl{flex:1;min-width:200px;font-size:var(--t-body);font-weight:600}
+.prop .pv{display:block;margin-top:4px;font-weight:500;font-size:12px;color:var(--ink-3);background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-sm);padding:7px 9px;white-space:pre-wrap;overflow-wrap:anywhere}
+.ok-note{color:var(--ok);font-weight:800;font-size:12px}
+.no-note{color:var(--ink-4);font-weight:800;font-size:12px}
+.detectbox{margin-top:8px;font-size:12px;border-radius:var(--r-sm);padding:8px 10px;background:var(--surface-2);border:1px solid var(--line);color:var(--ink-3)}
+.detectbox.hot{background:var(--overdue-tint);border-color:var(--overdue-line);color:#5C3800}
+.log .row{align-items:flex-start}
+.log time{font-size:10.5px;font-weight:800;color:var(--ink-4);flex:0 0 58px;padding-top:2px;font-variant-numeric:tabular-nums}
+.rules{display:grid;grid-template-columns:minmax(120px,auto) 1fr;gap:6px 14px;margin-top:10px;font-size:12.5px}
+.rules b{font-weight:800;color:var(--ink-2)}
+.rules span{color:var(--ink-3)}
+.filterbar{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
+.filterbar button{font:inherit;font-size:12px;font-weight:700;padding:5px 10px;border-radius:var(--r-pill);border:1px solid var(--line-strong);background:var(--surface);color:var(--ink-3);cursor:pointer}
+.filterbar button.on{background:var(--ai);color:#fff;border-color:var(--ai)}
+
 /* --- 17. Hero (item / bug header) ------------------------------------- */
 .hero{background:var(--navy-grad);color:#fff;padding:16px 22px;border-radius:var(--r-lg)}
 .hero .hid{font-size:var(--t-meta);font-weight:700;color:var(--accent-light)}

@@ -1,29 +1,44 @@
+"use client";
+
 import Link from "next/link";
-import { getRun, getSignals, getRequests, SIGNAL_LABEL } from "@/lib/agent";
-import { memberById } from "@/lib/data";
+import { useState } from "react";
+import { getRun, getSignals, getRequests, detections, SIGNAL_LABEL, type SignalKind } from "@/lib/agent";
+import { code, firstName, itemById } from "@/lib/data";
+import { useAllEvents, useWorld } from "@/lib/useWorld";
+import { ActivityLog, Outbox, ReadOnlyNote, RequestCard, SignalCard } from "@/components/hic";
+import { PrivacyCard } from "@/components/privacy";
 
 export default function AgentPage() {
-  const run = getRun();
-  const signals = getSignals();
-  const requests = getRequests();
+  const w = useWorld();
+  const all = useAllEvents();
+  const run = getRun(w);
+  const signals = getSignals(w);
+  const requests = getRequests(w);
+  const caught = detections(w);
+  const [kind, setKind] = useState<SignalKind | "all">("all");
+  const [showDecided, setShowDecided] = useState(false);
+
+  const kinds = (Object.keys(SIGNAL_LABEL) as SignalKind[]).filter((k) => signals.some((s) => s.kind === k));
+  const visible = signals.filter((s) => (kind === "all" || s.kind === kind) && (showDecided || s.state === "open" || s.state === "accepted"));
+  const hidden = signals.filter((s) => s.state === "dismissed" || s.state === "snoozed").length;
 
   return (
     <>
       <h1 className="h1">Beacon agent</h1>
       <div className="sub">
-        Runs headless every {run.intervalMins} minutes and on events. Reads the tracker, git history and
-        the knowledge base, keeps sprint-by-sprint memory, and proposes next actions — it never writes to
-        Jira on its own.
+        Runs every {run.intervalMins} minutes and on tracker events. It assesses every item, asks people when the data
+        can&apos;t answer, and proposes changes — <b>it never changes the tracker itself</b>. You accept, dismiss or approve.
       </div>
+      <ReadOnlyNote />
 
-      {/* last run summary */}
       <div className="card" style={{ marginTop: 14 }}>
-        <div className="ct">Last run <span className="mut">{run.ranAt} · {run.trigger}</span></div>
+        <div className="ct">Last run <span className="mut">{run.ranAt} · {run.trigger === "event" ? "re-run on your decisions" : "scheduled"}</span></div>
         <div className="kpis" style={{ marginTop: 12 }}>
           <div className="kpi"><div className="klab">Items scanned</div><div className="kval">{run.itemsScanned}</div></div>
-          <div className="kpi bad"><div className="klab">Signals found</div><div className="kval">{run.signalsFound}</div></div>
-          <div className="kpi risk"><div className="klab">Awaiting input</div><div className="kval">{run.openRequests}</div></div>
-          <div className="kpi"><div className="klab">Next run</div><div className="kval" style={{ fontSize: 18 }}>in {run.intervalMins}m</div></div>
+          <div className="kpi bad"><div className="klab">Open signals</div><div className="kval">{run.signalsOpen}</div></div>
+          <div className="kpi good"><div className="klab">Decided</div><div className="kval">{run.signalsDecided}</div></div>
+          <div className="kpi risk"><div className="klab">Awaiting answers</div><div className="kval">{run.openRequests}</div></div>
+          <div className="kpi"><div className="klab">Proposals to review</div><div className="kval">{run.pendingProposals}</div></div>
         </div>
         <div className="chips" style={{ marginTop: 12 }}>
           {run.scope.map((s) => <span key={s} className="chip ai">{s}</span>)}
@@ -31,65 +46,54 @@ export default function AgentPage() {
         </div>
       </div>
 
-      {/* the human-in-the-loop input requests */}
-      <h2 className="h2">Needs your input</h2>
-      <div className="sub" style={{ marginTop: -4 }}>
-        When the agent can&apos;t resolve something from the data, it asks — and re-asks each run until answered.
-      </div>
-      {requests.length === 0 && (
-        <div className="state" style={{ marginTop: 10 }}>
-          <div className="st">Nothing outstanding</div>
-          <div className="sx">Every open question has an answer; the agent will keep watching.</div>
-        </div>
-      )}
-      {requests.map((r) => {
-        const to = memberById(r.toMemberId);
-        return (
-          <div key={r.id} className="ai" style={{ marginTop: 12 }}>
-            <div className="aihead">
-              <div className="ct">{r.itemId.toUpperCase()} · asking {to?.name.split(" ")[0] ?? "owner"}</div>
-              <span className="conf low">re-asked {r.reaskCount}×</span>
+      <div className="cols" style={{ marginTop: 16 }}>
+        <div className="col">
+          <h2 className="h2" style={{ marginTop: 0 }}>Questions the agent is asking</h2>
+          <div className="sub" style={{ marginTop: -4 }}>When the data can&apos;t answer, the agent asks one person — and re-asks each daily run until answered.</div>
+          {requests.length === 0 && (
+            <div className="state" style={{ marginTop: 10 }}>
+              <div className="st">Nothing outstanding</div>
+              <div className="sx">Every question has an answer; the agent keeps watching.</div>
             </div>
-            <div className="aiout">{r.question}</div>
-            <div className="cite">Open since day {r.askedOnDay - r.reaskCount} · will re-ask next run if unanswered</div>
-            <div className="aiact">
-              <button className="btn p sm" type="button">Answer</button>
-              <Link className="btn s sm" href={`/item/${r.itemId}`}>Open {r.itemId.toUpperCase()}</Link>
-              <button className="btn g sm" type="button">Snooze</button>
-            </div>
-          </div>
-        );
-      })}
+          )}
+          {requests.map((r) => <RequestCard key={r.id} r={r} w={w} item={itemById(r.itemId, w)!} />)}
 
-      {/* assessments + proposed next actions */}
-      <h2 className="h2">Assessments &amp; next actions</h2>
-      {signals.map((s) => (
-        <div key={s.id} className="card" style={{ marginTop: 12 }}>
-          <div className="ct">
-            <span style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-              <span className={`pill ${s.severity === "high" ? "r" : s.severity === "medium" ? "a" : "n"}`}>{SIGNAL_LABEL[s.kind]}</span>
-              <Link href={`/item/${s.itemId}`}>{s.summary}</Link>
-            </span>
-            <span className="mut">conf {s.confidence}%</span>
-          </div>
-          <ul style={{ margin: "10px 0 0", paddingLeft: 18, fontSize: "var(--t-body)", color: "var(--ink-3)", lineHeight: 1.5 }}>
-            {s.evidence.map((e, i) => <li key={i}>{e}</li>)}
-          </ul>
-          <div className="cite" style={{ color: "var(--ink-4)" }}>Source: {s.source}{s.owner ? ` · owner ${s.owner.name}` : ""}</div>
-          <div className="btnrow" style={{ marginTop: 10 }}>
-            {s.actions.map((a, i) => (
-              <button key={i} className={`btn ${i === 0 ? "p" : "s"} sm`} type="button">{a.label}</button>
+          <h2 className="h2">Assessments</h2>
+          <div className="filterbar" role="group" aria-label="Filter signals">
+            <button type="button" className={kind === "all" ? "on" : ""} onClick={() => setKind("all")}>All ({signals.length})</button>
+            {kinds.map((k) => (
+              <button key={k} type="button" className={kind === k ? "on" : ""} onClick={() => setKind(k)}>
+                {SIGNAL_LABEL[k]} ({signals.filter((s) => s.kind === k).length})
+              </button>
             ))}
           </div>
+          {visible.map((s) => <SignalCard key={s.id} s={s} w={w} />)}
+          {visible.length === 0 && <div className="state" style={{ marginTop: 12 }}><div className="st">Nothing open here</div><div className="sx">Everything in this view has been decided.</div></div>}
+          {hidden > 0 && (
+            <button className="btn g sm" type="button" style={{ marginTop: 10 }} onClick={() => setShowDecided((v) => !v)}>
+              {showDecided ? "Hide" : "Show"} {hidden} dismissed / snoozed
+            </button>
+          )}
         </div>
-      ))}
 
-      <div className="banner ai" style={{ marginTop: 16 }}>
-        <div className="bt">
-          <b>How this works.</b> The agent&apos;s findings are written to its own store (not the tracker) and this
-          dashboard reads from there, so every role sees the same picture. Jira / Azure DevOps stays the system
-          of record — any write is previewed and approved by a human first. Context carries sprint to sprint, so
-          the agent can cite how similar items were resolved before.
+        <div className="col narrow">
+          <div className="card">
+            <div className="ct">Caught early this sprint</div>
+            <div className="sub" style={{ marginTop: 4 }}>Update wording that read as blocked, compared with when — or whether — a blocker was raised.</div>
+            {caught.map((d) => (
+              <Link key={d.item.id} className="row" href={`/item/${d.item.id}`} style={{ alignItems: "flex-start" }}>
+                <div className="nm">
+                  {code(d.item)} · day {d.day} · {firstName(d.author)}
+                  <small>{d.phrases.join(", ")}</small>
+                  <small>{d.raisedDay === null ? "Never raised as a blocker" : d.leadDays! > 0 ? `Raised on day ${d.raisedDay} — ${d.leadDays} days later` : `Raised the same day`}</small>
+                </div>
+              </Link>
+            ))}
+            {caught.length === 0 && <div className="sub" style={{ marginTop: 6 }}>No blocker wording detected yet.</div>}
+          </div>
+          <Outbox w={w} />
+          <ActivityLog w={w} all={all} />
+          <PrivacyCard all={all} />
         </div>
       </div>
     </>

@@ -5,6 +5,7 @@
 
 export const TODAY = "2026-10-08";
 export const ACTIVE_SPRINT_ID = "s2";
+export const ACTIVE_SPRINT_START = "2026-10-01";
 
 export function today(): Date {
   return new Date(TODAY + "T09:00:00");
@@ -22,4 +23,9 @@ export function sprintDay(startDate: string, on: string = TODAY): number {
   const start = new Date(startDate + "T09:00:00").getTime();
   const d = new Date(on + "T09:00:00").getTime();
   return Math.floor((d - start) / 86_400_000) + 1;
+}
+
+/** Today's day number in the active sprint. */
+export function todayDay(): number {
+  return sprintDay(ACTIVE_SPRINT_START);
 }

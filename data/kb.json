@@ -1,0 +1,76 @@
+[
+  {
+    "id": "kb-stripe-webhooks",
+    "title": "Stripe webhooks: verify signatures against the raw body",
+    "author": "m2",
+    "tags": ["stripe", "webhook", "signature", "hmac", "bodyparser", "express", "raw body", "verify"],
+    "summary": "Signature checks fail when a JSON body parser consumes the raw request body first. Mount the webhook route with express.raw({ type: 'application/json' }) before the global express.json() middleware, and pass the raw Buffer to stripe.webhooks.constructEvent().",
+    "steps": [
+      "Register the webhook route before app.use(express.json()).",
+      "Use express.raw({ type: 'application/json' }) on that route only.",
+      "Pass req.body (a Buffer) and the Stripe-Signature header to constructEvent().",
+      "Test with `stripe listen --forward-to` before deploying."
+    ]
+  },
+  {
+    "id": "kb-sandbox-credentials",
+    "title": "Requesting sandbox credentials and access keys from Infra",
+    "author": "m1",
+    "tags": ["credentials", "sandbox", "access keys", "infra", "oauth", "client id", "secret", "provision"],
+    "summary": "Infra turns credential requests around in one working day when they arrive on the access-request template. If there is no answer in 24 hours, escalate to the tech lead and note the client impact on the item.",
+    "steps": [
+      "Raise the request on the Infra access-request template (environment, scopes, expiry).",
+      "Link the tracker item so the dependency is visible.",
+      "After 24 hours without an answer, escalate to the tech lead.",
+      "Share credentials with the client through the secure vault, never by email."
+    ]
+  },
+  {
+    "id": "kb-email-provider",
+    "title": "Email notifications: sandbox sending and SPF/DKIM setup",
+    "author": "m2",
+    "tags": ["email", "notification", "smtp", "dkim", "spf", "in-app", "provider", "sandbox"],
+    "summary": "Use the provider's sandbox mode for non-production sends; production sending needs SPF and DKIM records on the client domain, which the client's IT team must add.",
+    "steps": [
+      "Enable sandbox mode for dev and test environments.",
+      "Request SPF/DKIM DNS records from the client IT lead early — it takes days.",
+      "Keep the in-app notification path independent of email delivery."
+    ]
+  },
+  {
+    "id": "kb-pdf-page-breaks",
+    "title": "PDF export: controlling page breaks in react-pdf",
+    "author": "m2",
+    "tags": ["pdf", "export", "page break", "react-pdf", "formatting"],
+    "summary": "Wrap rows that must stay together in a View with wrap={false}, and use the break prop to force a new page before section headers.",
+    "steps": [
+      "Mark table rows wrap={false}.",
+      "Add break to section headings that must start a page.",
+      "Snapshot-test the generated PDF page count."
+    ]
+  },
+  {
+    "id": "kb-rate-limits",
+    "title": "Third-party API rate limits: backoff and load-test plan",
+    "author": "m5",
+    "tags": ["rate limit", "throttling", "load test", "third-party", "sandbox tier", "429"],
+    "summary": "Sandbox tiers throttle far below production. Load-test against a mock, retry 429s with exponential backoff and jitter, and confirm production limits with the vendor in writing.",
+    "steps": [
+      "Retry on 429 with exponential backoff and jitter.",
+      "Load-test against a mock that replays recorded responses.",
+      "Get production limits from the vendor in writing."
+    ]
+  },
+  {
+    "id": "kb-uat-checklist",
+    "title": "UAT session checklist",
+    "author": "m5",
+    "tags": ["uat", "session", "client", "schedule", "acceptance", "sign-off"],
+    "summary": "Book the client, the QA lead and a stable test environment together; send scripted scenarios two days ahead and record sign-off per scenario.",
+    "steps": [
+      "Confirm attendees and environment freeze date.",
+      "Send scripted scenarios two days ahead.",
+      "Record pass/fail and sign-off per scenario."
+    ]
+  }
+]

@@ -154,23 +154,12 @@
     "blocker": "Webhook HMAC signature verification: Stripe docs contradict SDK behaviour. Marcus unable to proceed without pairing support.",
     "blockerOwnedBy": "m2",
     "blockerRaisedDate": "2026-10-06",
-    "blockerDetectedByAI": true,
-    "blockerDetectedDate": "2026-10-05",
     "dependsOn": [
       "rsk-001"
     ],
     "clientImpact": true,
     "spillover": false,
     "clarityScore": 3,
-    "priorityScore": 91,
-    "priorityReasons": [
-      "Blocker age: 2 days (+30)",
-      "Priority: high (+30)",
-      "Dependent items: 1 (+8)",
-      "Client impact flag (+10)",
-      "Due in 2 days (+8)",
-      "Active blocker multiplier (+5)"
-    ],
     "meetingId": null,
     "extractedFromMeeting": false
   },
@@ -191,14 +180,7 @@
     ],
     "clientImpact": true,
     "spillover": false,
-    "clarityScore": 8,
-    "priorityScore": 50,
-    "priorityReasons": [
-      "Priority: high (+30)",
-      "Client impact flag (+10)",
-      "Due in 1 day (+10)",
-      "No blocker (+0)"
-    ]
+    "clarityScore": 8
   },
   {
     "id": "req-003",
@@ -216,14 +198,7 @@
     ],
     "clientImpact": false,
     "spillover": false,
-    "clarityScore": 5,
-    "priorityScore": 38,
-    "priorityReasons": [
-      "Priority: medium (+20)",
-      "Dependent on req-002 (+8)",
-      "Due in 1 day (+10)",
-      "No client impact (+0)"
-    ]
+    "clarityScore": 5
   },
   {
     "id": "req-004",
@@ -242,15 +217,7 @@
     "clientImpact": false,
     "spillover": true,
     "spilloverFromId": "s1-006",
-    "clarityScore": 2,
-    "priorityScore": 78,
-    "priorityReasons": [
-      "Spillover item (+15)",
-      "Priority: high (+30)",
-      "Owner overloaded — also owns blocked req-001 (+10)",
-      "Due in 1 day (+8)",
-      "No blocker formally raised (+15 risk)"
-    ]
+    "clarityScore": 2
   },
   {
     "id": "req-005",
@@ -269,13 +236,7 @@
     ],
     "clientImpact": false,
     "spillover": false,
-    "clarityScore": null,
-    "priorityScore": 22,
-    "priorityReasons": [
-      "Priority: low (+10)",
-      "Due tomorrow (+8)",
-      "No updates yet, not started (+4)"
-    ]
+    "clarityScore": null
   },
   {
     "id": "act-001",
@@ -293,13 +254,6 @@
     "clientDelayRisk": true,
     "spillover": false,
     "clarityScore": null,
-    "priorityScore": 84,
-    "priorityReasons": [
-      "Overdue by 4 days (+60)",
-      "Client delay risk (+10)",
-      "Priority: high (+10)",
-      "Blocks req-001 indirectly (+4)"
-    ],
     "meetingId": "mtg-001",
     "extractedFromMeeting": true,
     "demoNote": "Extracted from Apex meeting notes. Shows client-facing action item tracking."
@@ -322,12 +276,6 @@
     "clientDelayRisk": false,
     "spillover": false,
     "clarityScore": null,
-    "priorityScore": 42,
-    "priorityReasons": [
-      "Priority: medium (+20)",
-      "Client involvement (+10)",
-      "Overdue by 3 days (+12)"
-    ],
     "meetingId": "mtg-001",
     "extractedFromMeeting": true
   },
@@ -346,14 +294,7 @@
     "clientImpact": false,
     "spillover": true,
     "spilloverFromId": "s1-005",
-    "clarityScore": null,
-    "priorityScore": 50,
-    "priorityReasons": [
-      "Spillover item (+15)",
-      "Priority: medium (+20)",
-      "Overdue by 1 day (+5)",
-      "Tech lead is also blocking on req-001 (+10)"
-    ]
+    "clarityScore": null
   },
   {
     "id": "dec-001",
@@ -370,7 +311,6 @@
     "clientImpact": true,
     "spillover": false,
     "clarityScore": null,
-    "priorityScore": 10,
     "meetingId": "mtg-001",
     "extractedFromMeeting": true,
     "confirmedDate": "2026-10-01"
@@ -390,7 +330,6 @@
     "clientImpact": true,
     "spillover": false,
     "clarityScore": null,
-    "priorityScore": 10,
     "meetingId": "mtg-001",
     "extractedFromMeeting": true,
     "confirmedDate": "2026-10-01"
@@ -410,13 +349,6 @@
     "clientImpact": false,
     "spillover": false,
     "clarityScore": null,
-    "priorityScore": 53,
-    "priorityReasons": [
-      "Priority: medium (+20)",
-      "Blocks req-001 (+8)",
-      "Monitoring status — no mitigation plan yet (+15)",
-      "Due tomorrow (+10)"
-    ],
     "meetingId": "mtg-001",
     "extractedFromMeeting": true,
     "raisedBy": "m2",
@@ -439,13 +371,6 @@
     "clientImpact": false,
     "spillover": false,
     "clarityScore": null,
-    "priorityScore": 34,
-    "priorityReasons": [
-      "Priority: low (+10)",
-      "Linked to act-002 (+8)",
-      "Monitoring status (+10)",
-      "Due tomorrow (+6)"
-    ],
     "raisedBy": "m5",
     "mitigationPlan": "Schedule UAT for Oct 13 (Monday) so Aisha can lead before leave begins."
   },
@@ -464,12 +389,6 @@
     "clientImpact": true,
     "spillover": false,
     "clarityScore": 7,
-    "priorityScore": 28,
-    "priorityReasons": [
-      "Priority: low (+10)",
-      "Client impact flag (+10)",
-      "Dependent items: 1 (+8)"
-    ],
     "_generated": true
   },
   {
@@ -487,11 +406,6 @@
     "clientImpact": true,
     "spillover": false,
     "clarityScore": 8,
-    "priorityScore": 40,
-    "priorityReasons": [
-      "Priority: high (+30)",
-      "Client impact flag (+10)"
-    ],
     "_generated": true
   },
   {
@@ -509,10 +423,6 @@
     "clientImpact": false,
     "spillover": false,
     "clarityScore": null,
-    "priorityScore": 20,
-    "priorityReasons": [
-      "Priority: medium (+20)"
-    ],
     "_generated": true
   },
   {
@@ -530,11 +440,6 @@
     "clientImpact": true,
     "spillover": false,
     "clarityScore": null,
-    "priorityScore": 30,
-    "priorityReasons": [
-      "Priority: medium (+20)",
-      "Client impact flag (+10)"
-    ],
     "_generated": true
   },
   {
@@ -552,11 +457,6 @@
     "clientImpact": true,
     "spillover": false,
     "clarityScore": 7,
-    "priorityScore": 30,
-    "priorityReasons": [
-      "Priority: medium (+20)",
-      "Client impact flag (+10)"
-    ],
     "_generated": true
   },
   {
@@ -574,10 +474,6 @@
     "clientImpact": false,
     "spillover": false,
     "clarityScore": 4,
-    "priorityScore": 30,
-    "priorityReasons": [
-      "Priority: high (+30)"
-    ],
     "_generated": true
   },
   {
@@ -595,11 +491,6 @@
     "clientImpact": false,
     "spillover": false,
     "clarityScore": 8,
-    "priorityScore": 28,
-    "priorityReasons": [
-      "Priority: medium (+20)",
-      "Dependent items: 1 (+8)"
-    ],
     "_generated": true
   },
   {
@@ -617,11 +508,6 @@
     "clientImpact": true,
     "spillover": false,
     "clarityScore": null,
-    "priorityScore": 30,
-    "priorityReasons": [
-      "Priority: medium (+20)",
-      "Client impact flag (+10)"
-    ],
     "_generated": true
   },
   {
@@ -639,10 +525,6 @@
     "clientImpact": false,
     "spillover": false,
     "clarityScore": 8,
-    "priorityScore": 10,
-    "priorityReasons": [
-      "Priority: low (+10)"
-    ],
     "_generated": true
   },
   {
@@ -660,10 +542,6 @@
     "clientImpact": false,
     "spillover": false,
     "clarityScore": null,
-    "priorityScore": 30,
-    "priorityReasons": [
-      "Priority: high (+30)"
-    ],
     "_generated": true
   },
   {
@@ -681,12 +559,6 @@
     "clientImpact": true,
     "spillover": false,
     "clarityScore": null,
-    "priorityScore": 38,
-    "priorityReasons": [
-      "Priority: medium (+20)",
-      "Client impact flag (+10)",
-      "Dependent items: 1 (+8)"
-    ],
     "_generated": true
   },
   {
@@ -704,11 +576,6 @@
     "clientImpact": true,
     "spillover": false,
     "clarityScore": 7,
-    "priorityScore": 20,
-    "priorityReasons": [
-      "Priority: low (+10)",
-      "Client impact flag (+10)"
-    ],
     "_generated": true
   },
   {
@@ -726,11 +593,6 @@
     "clientImpact": false,
     "spillover": true,
     "clarityScore": 4,
-    "priorityScore": 35,
-    "priorityReasons": [
-      "Priority: medium (+20)",
-      "Spillover item (+15)"
-    ],
     "_generated": true
   },
   {
@@ -748,10 +610,6 @@
     "clientImpact": false,
     "spillover": false,
     "clarityScore": 5,
-    "priorityScore": 10,
-    "priorityReasons": [
-      "Priority: low (+10)"
-    ],
     "_generated": true
   },
   {
@@ -769,11 +627,6 @@
     "clientImpact": true,
     "spillover": false,
     "clarityScore": null,
-    "priorityScore": 40,
-    "priorityReasons": [
-      "Priority: high (+30)",
-      "Client impact flag (+10)"
-    ],
     "_generated": true
   },
   {
@@ -791,10 +644,6 @@
     "clientImpact": false,
     "spillover": false,
     "clarityScore": null,
-    "priorityScore": 20,
-    "priorityReasons": [
-      "Priority: medium (+20)"
-    ],
     "_generated": true
   },
   {
@@ -812,11 +661,6 @@
     "clientImpact": true,
     "spillover": false,
     "clarityScore": null,
-    "priorityScore": 20,
-    "priorityReasons": [
-      "Priority: low (+10)",
-      "Client impact flag (+10)"
-    ],
     "_generated": true
   },
   {
@@ -834,11 +678,6 @@
     "clientImpact": true,
     "spillover": false,
     "clarityScore": 6,
-    "priorityScore": 40,
-    "priorityReasons": [
-      "Priority: high (+30)",
-      "Client impact flag (+10)"
-    ],
     "_generated": true
   },
   {
@@ -856,11 +695,6 @@
     "clientImpact": true,
     "spillover": false,
     "clarityScore": 8,
-    "priorityScore": 40,
-    "priorityReasons": [
-      "Priority: high (+30)",
-      "Client impact flag (+10)"
-    ],
     "_generated": true
   },
   {
@@ -878,11 +712,6 @@
     "clientImpact": true,
     "spillover": false,
     "clarityScore": null,
-    "priorityScore": 30,
-    "priorityReasons": [
-      "Priority: medium (+20)",
-      "Client impact flag (+10)"
-    ],
     "_generated": true
   },
   {
@@ -900,12 +729,6 @@
     "clientImpact": true,
     "spillover": false,
     "clarityScore": 6,
-    "priorityScore": 38,
-    "priorityReasons": [
-      "Priority: medium (+20)",
-      "Client impact flag (+10)",
-      "Dependent items: 1 (+8)"
-    ],
     "_generated": true
   },
   {
@@ -923,11 +746,6 @@
     "clientImpact": true,
     "spillover": false,
     "clarityScore": null,
-    "priorityScore": 30,
-    "priorityReasons": [
-      "Priority: medium (+20)",
-      "Client impact flag (+10)"
-    ],
     "_generated": true
   },
   {
@@ -945,10 +763,6 @@
     "clientImpact": false,
     "spillover": false,
     "clarityScore": null,
-    "priorityScore": 20,
-    "priorityReasons": [
-      "Priority: medium (+20)"
-    ],
     "_generated": true
   },
   {
@@ -966,10 +780,6 @@
     "clientImpact": false,
     "spillover": false,
     "clarityScore": null,
-    "priorityScore": 20,
-    "priorityReasons": [
-      "Priority: medium (+20)"
-    ],
     "_generated": true
   },
   {
@@ -987,10 +797,6 @@
     "clientImpact": false,
     "spillover": false,
     "clarityScore": null,
-    "priorityScore": 20,
-    "priorityReasons": [
-      "Priority: medium (+20)"
-    ],
     "_generated": true
   },
   {
@@ -1008,10 +814,6 @@
     "clientImpact": false,
     "spillover": false,
     "clarityScore": null,
-    "priorityScore": 20,
-    "priorityReasons": [
-      "Priority: medium (+20)"
-    ],
     "_generated": true
   },
   {
@@ -1029,10 +831,6 @@
     "clientImpact": false,
     "spillover": false,
     "clarityScore": null,
-    "priorityScore": 20,
-    "priorityReasons": [
-      "Priority: medium (+20)"
-    ],
     "_generated": true
   },
   {
@@ -1050,11 +848,6 @@
     "clientImpact": false,
     "spillover": false,
     "clarityScore": null,
-    "priorityScore": 38,
-    "priorityReasons": [
-      "Priority: high (+30)",
-      "Dependent items: 1 (+8)"
-    ],
     "_generated": true
   },
   {
@@ -1072,11 +865,6 @@
     "clientImpact": true,
     "spillover": false,
     "clarityScore": null,
-    "priorityScore": 30,
-    "priorityReasons": [
-      "Priority: medium (+20)",
-      "Client impact flag (+10)"
-    ],
     "_generated": true
   },
   {
@@ -1094,10 +882,6 @@
     "clientImpact": false,
     "spillover": false,
     "clarityScore": 8,
-    "priorityScore": 30,
-    "priorityReasons": [
-      "Priority: high (+30)"
-    ],
     "_generated": true
   },
   {
@@ -1115,10 +899,6 @@
     "clientImpact": false,
     "spillover": false,
     "clarityScore": null,
-    "priorityScore": 30,
-    "priorityReasons": [
-      "Priority: high (+30)"
-    ],
     "_generated": true
   },
   {
@@ -1136,11 +916,6 @@
     "clientImpact": false,
     "spillover": false,
     "clarityScore": 5,
-    "priorityScore": 38,
-    "priorityReasons": [
-      "Priority: high (+30)",
-      "Dependent items: 1 (+8)"
-    ],
     "_generated": true
   },
   {
@@ -1158,10 +933,6 @@
     "clientImpact": false,
     "spillover": false,
     "clarityScore": 5,
-    "priorityScore": 20,
-    "priorityReasons": [
-      "Priority: medium (+20)"
-    ],
     "_generated": true
   },
   {
@@ -1179,11 +950,6 @@
     "clientImpact": false,
     "spillover": false,
     "clarityScore": null,
-    "priorityScore": 28,
-    "priorityReasons": [
-      "Priority: medium (+20)",
-      "Dependent items: 1 (+8)"
-    ],
     "_generated": true
   },
   {
@@ -1201,10 +967,6 @@
     "clientImpact": false,
     "spillover": false,
     "clarityScore": null,
-    "priorityScore": 10,
-    "priorityReasons": [
-      "Priority: low (+10)"
-    ],
     "_generated": true
   },
   {
@@ -1222,11 +984,6 @@
     "clientImpact": true,
     "spillover": false,
     "clarityScore": 8,
-    "priorityScore": 30,
-    "priorityReasons": [
-      "Priority: medium (+20)",
-      "Client impact flag (+10)"
-    ],
     "_generated": true
   },
   {
@@ -1244,11 +1001,6 @@
     "clientImpact": true,
     "spillover": false,
     "clarityScore": null,
-    "priorityScore": 30,
-    "priorityReasons": [
-      "Priority: medium (+20)",
-      "Client impact flag (+10)"
-    ],
     "_generated": true
   },
   {
@@ -1266,12 +1018,6 @@
     "clientImpact": true,
     "spillover": false,
     "clarityScore": null,
-    "priorityScore": 32,
-    "priorityReasons": [
-      "Priority: low (+10)",
-      "Monitoring — no mitigation yet (+12)",
-      "Client impact flag (+10)"
-    ],
     "_generated": true
   },
   {
@@ -1289,11 +1035,6 @@
     "clientImpact": false,
     "spillover": false,
     "clarityScore": 8,
-    "priorityScore": 28,
-    "priorityReasons": [
-      "Priority: medium (+20)",
-      "Dependent items: 1 (+8)"
-    ],
     "_generated": true
   },
   {
@@ -1311,12 +1052,6 @@
     "clientImpact": true,
     "spillover": false,
     "clarityScore": null,
-    "priorityScore": 42,
-    "priorityReasons": [
-      "Priority: medium (+20)",
-      "Monitoring — no mitigation yet (+12)",
-      "Client impact flag (+10)"
-    ],
     "_generated": true
   },
   {
@@ -1334,11 +1069,6 @@
     "clientImpact": false,
     "spillover": false,
     "clarityScore": null,
-    "priorityScore": 36,
-    "priorityReasons": [
-      "Priority: high (+30)",
-      "In the active sprint (+6)"
-    ],
     "_generated": true
   },
   {
@@ -1356,11 +1086,6 @@
     "clientImpact": false,
     "spillover": false,
     "clarityScore": null,
-    "priorityScore": 26,
-    "priorityReasons": [
-      "Priority: medium (+20)",
-      "In the active sprint (+6)"
-    ],
     "_generated": true
   },
   {
@@ -1378,12 +1103,6 @@
     "clientImpact": true,
     "spillover": false,
     "clarityScore": null,
-    "priorityScore": 36,
-    "priorityReasons": [
-      "Priority: medium (+20)",
-      "Client impact flag (+10)",
-      "In the active sprint (+6)"
-    ],
     "_generated": true
   },
   {
@@ -1401,11 +1120,6 @@
     "clientImpact": false,
     "spillover": false,
     "clarityScore": 7,
-    "priorityScore": 42,
-    "priorityReasons": [
-      "Priority: high (+30)",
-      "Monitoring — no mitigation yet (+12)"
-    ],
     "_generated": true
   },
   {
@@ -1423,11 +1137,6 @@
     "clientImpact": false,
     "spillover": false,
     "clarityScore": 5,
-    "priorityScore": 42,
-    "priorityReasons": [
-      "Priority: high (+30)",
-      "Monitoring — no mitigation yet (+12)"
-    ],
     "_generated": true
   },
   {
@@ -1441,15 +1150,12 @@
     "priority": "medium",
     "status": "in_progress",
     "blocker": null,
-    "dependsOn": [],
+    "dependsOn": [
+      "req-001"
+    ],
     "clientImpact": false,
     "spillover": false,
     "clarityScore": 4,
-    "priorityScore": 26,
-    "priorityReasons": [
-      "Priority: medium (+20)",
-      "In the active sprint (+6)"
-    ],
     "_generated": true
   },
   {
@@ -1467,10 +1173,6 @@
     "clientImpact": false,
     "spillover": false,
     "clarityScore": null,
-    "priorityScore": 20,
-    "priorityReasons": [
-      "Priority: medium (+20)"
-    ],
     "_generated": true
   },
   {
@@ -1488,11 +1190,6 @@
     "clientImpact": false,
     "spillover": false,
     "clarityScore": null,
-    "priorityScore": 16,
-    "priorityReasons": [
-      "Priority: low (+10)",
-      "In the active sprint (+6)"
-    ],
     "_generated": true
   },
   {
@@ -1510,12 +1207,6 @@
     "clientImpact": true,
     "spillover": false,
     "clarityScore": null,
-    "priorityScore": 42,
-    "priorityReasons": [
-      "Priority: medium (+20)",
-      "Monitoring — no mitigation yet (+12)",
-      "Client impact flag (+10)"
-    ],
     "_generated": true
   },
   {
@@ -1533,11 +1224,6 @@
     "clientImpact": false,
     "spillover": false,
     "clarityScore": null,
-    "priorityScore": 32,
-    "priorityReasons": [
-      "Priority: medium (+20)",
-      "Monitoring — no mitigation yet (+12)"
-    ],
     "_generated": true
   },
   {
@@ -1555,11 +1241,6 @@
     "clientImpact": false,
     "spillover": false,
     "clarityScore": null,
-    "priorityScore": 16,
-    "priorityReasons": [
-      "Priority: low (+10)",
-      "In the active sprint (+6)"
-    ],
     "_generated": true
   },
   {
@@ -1577,11 +1258,6 @@
     "clientImpact": false,
     "spillover": false,
     "clarityScore": null,
-    "priorityScore": 26,
-    "priorityReasons": [
-      "Priority: medium (+20)",
-      "In the active sprint (+6)"
-    ],
     "_generated": true
   },
   {
@@ -1599,11 +1275,6 @@
     "clientImpact": false,
     "spillover": false,
     "clarityScore": 5,
-    "priorityScore": 26,
-    "priorityReasons": [
-      "Priority: medium (+20)",
-      "In the active sprint (+6)"
-    ],
     "_generated": true
   },
   {
@@ -1621,11 +1292,6 @@
     "clientImpact": false,
     "spillover": false,
     "clarityScore": 7,
-    "priorityScore": 16,
-    "priorityReasons": [
-      "Priority: low (+10)",
-      "In the active sprint (+6)"
-    ],
     "_generated": true
   },
   {
@@ -1643,12 +1309,6 @@
     "clientImpact": false,
     "spillover": false,
     "clarityScore": 5,
-    "priorityScore": 30,
-    "priorityReasons": [
-      "Priority: medium (+20)",
-      "Dependent items: 1 (+8)",
-      "Backlog — not started (+2)"
-    ],
     "_generated": true
   },
   {
@@ -1666,11 +1326,6 @@
     "clientImpact": false,
     "spillover": false,
     "clarityScore": null,
-    "priorityScore": 22,
-    "priorityReasons": [
-      "Priority: medium (+20)",
-      "Backlog — not started (+2)"
-    ],
     "_generated": true
   },
   {
@@ -1688,11 +1343,6 @@
     "clientImpact": false,
     "spillover": false,
     "clarityScore": null,
-    "priorityScore": 32,
-    "priorityReasons": [
-      "Priority: high (+30)",
-      "Backlog — not started (+2)"
-    ],
     "_generated": true
   },
   {
@@ -1710,12 +1360,6 @@
     "clientImpact": true,
     "spillover": false,
     "clarityScore": 4,
-    "priorityScore": 42,
-    "priorityReasons": [
-      "Priority: high (+30)",
-      "Client impact flag (+10)",
-      "Backlog — not started (+2)"
-    ],
     "_generated": true
   },
   {
@@ -1733,11 +1377,6 @@
     "clientImpact": false,
     "spillover": false,
     "clarityScore": null,
-    "priorityScore": 12,
-    "priorityReasons": [
-      "Priority: low (+10)",
-      "Backlog — not started (+2)"
-    ],
     "_generated": true
   },
   {
@@ -1755,11 +1394,6 @@
     "clientImpact": false,
     "spillover": false,
     "clarityScore": 8,
-    "priorityScore": 12,
-    "priorityReasons": [
-      "Priority: low (+10)",
-      "Backlog — not started (+2)"
-    ],
     "_generated": true
   },
   {
@@ -1777,11 +1411,6 @@
     "clientImpact": false,
     "spillover": false,
     "clarityScore": 8,
-    "priorityScore": 32,
-    "priorityReasons": [
-      "Priority: high (+30)",
-      "Backlog — not started (+2)"
-    ],
     "_generated": true
   },
   {
@@ -1799,12 +1428,6 @@
     "clientImpact": false,
     "spillover": false,
     "clarityScore": null,
-    "priorityScore": 30,
-    "priorityReasons": [
-      "Priority: medium (+20)",
-      "Dependent items: 1 (+8)",
-      "Backlog — not started (+2)"
-    ],
     "_generated": true
   },
   {
@@ -1822,12 +1445,6 @@
     "clientImpact": true,
     "spillover": false,
     "clarityScore": null,
-    "priorityScore": 42,
-    "priorityReasons": [
-      "Priority: high (+30)",
-      "Client impact flag (+10)",
-      "Backlog — not started (+2)"
-    ],
     "_generated": true
   },
   {
@@ -1845,11 +1462,6 @@
     "clientImpact": false,
     "spillover": false,
     "clarityScore": 5,
-    "priorityScore": 12,
-    "priorityReasons": [
-      "Priority: low (+10)",
-      "Backlog — not started (+2)"
-    ],
     "_generated": true
   },
   {
@@ -1867,12 +1479,6 @@
     "clientImpact": true,
     "spillover": false,
     "clarityScore": null,
-    "priorityScore": 32,
-    "priorityReasons": [
-      "Priority: medium (+20)",
-      "Client impact flag (+10)",
-      "Backlog — not started (+2)"
-    ],
     "_generated": true
   },
   {
@@ -1890,13 +1496,6 @@
     "clientImpact": true,
     "spillover": false,
     "clarityScore": null,
-    "priorityScore": 40,
-    "priorityReasons": [
-      "Priority: medium (+20)",
-      "Client impact flag (+10)",
-      "Dependent items: 1 (+8)",
-      "Backlog — not started (+2)"
-    ],
     "_generated": true
   },
   {
@@ -1914,11 +1513,6 @@
     "clientImpact": false,
     "spillover": false,
     "clarityScore": null,
-    "priorityScore": 12,
-    "priorityReasons": [
-      "Priority: low (+10)",
-      "Backlog — not started (+2)"
-    ],
     "_generated": true
   },
   {
@@ -1936,11 +1530,6 @@
     "clientImpact": false,
     "spillover": false,
     "clarityScore": null,
-    "priorityScore": 12,
-    "priorityReasons": [
-      "Priority: low (+10)",
-      "Backlog — not started (+2)"
-    ],
     "_generated": true
   },
   {
@@ -1958,12 +1547,6 @@
     "clientImpact": false,
     "spillover": false,
     "clarityScore": null,
-    "priorityScore": 20,
-    "priorityReasons": [
-      "Priority: low (+10)",
-      "Dependent items: 1 (+8)",
-      "Backlog — not started (+2)"
-    ],
     "_generated": true
   },
   {
@@ -1981,11 +1564,6 @@
     "clientImpact": false,
     "spillover": false,
     "clarityScore": null,
-    "priorityScore": 22,
-    "priorityReasons": [
-      "Priority: medium (+20)",
-      "Backlog — not started (+2)"
-    ],
     "_generated": true
   },
   {
@@ -2003,12 +1581,6 @@
     "clientImpact": false,
     "spillover": false,
     "clarityScore": 5,
-    "priorityScore": 30,
-    "priorityReasons": [
-      "Priority: medium (+20)",
-      "Dependent items: 1 (+8)",
-      "Backlog — not started (+2)"
-    ],
     "_generated": true
   },
   {
@@ -2026,12 +1598,6 @@
     "clientImpact": true,
     "spillover": false,
     "clarityScore": null,
-    "priorityScore": 42,
-    "priorityReasons": [
-      "Priority: high (+30)",
-      "Client impact flag (+10)",
-      "Backlog — not started (+2)"
-    ],
     "_generated": true
   },
   {
@@ -2049,12 +1615,6 @@
     "clientImpact": false,
     "spillover": false,
     "clarityScore": null,
-    "priorityScore": 20,
-    "priorityReasons": [
-      "Priority: low (+10)",
-      "Dependent items: 1 (+8)",
-      "Backlog — not started (+2)"
-    ],
     "_generated": true
   },
   {
@@ -2072,12 +1632,6 @@
     "clientImpact": true,
     "spillover": false,
     "clarityScore": null,
-    "priorityScore": 42,
-    "priorityReasons": [
-      "Priority: high (+30)",
-      "Client impact flag (+10)",
-      "Backlog — not started (+2)"
-    ],
     "_generated": true
   },
   {
@@ -2095,11 +1649,6 @@
     "clientImpact": false,
     "spillover": false,
     "clarityScore": 7,
-    "priorityScore": 22,
-    "priorityReasons": [
-      "Priority: medium (+20)",
-      "Backlog — not started (+2)"
-    ],
     "_generated": true
   },
   {
@@ -2117,12 +1666,6 @@
     "clientImpact": true,
     "spillover": false,
     "clarityScore": 5,
-    "priorityScore": 42,
-    "priorityReasons": [
-      "Priority: high (+30)",
-      "Client impact flag (+10)",
-      "Backlog — not started (+2)"
-    ],
     "_generated": true
   },
   {
@@ -2140,12 +1683,6 @@
     "clientImpact": true,
     "spillover": false,
     "clarityScore": null,
-    "priorityScore": 32,
-    "priorityReasons": [
-      "Priority: medium (+20)",
-      "Client impact flag (+10)",
-      "Backlog — not started (+2)"
-    ],
     "_generated": true
   },
   {
@@ -2163,11 +1700,6 @@
     "clientImpact": false,
     "spillover": false,
     "clarityScore": null,
-    "priorityScore": 32,
-    "priorityReasons": [
-      "Priority: high (+30)",
-      "Backlog — not started (+2)"
-    ],
     "_generated": true
   },
   {
@@ -2185,12 +1717,6 @@
     "clientImpact": true,
     "spillover": false,
     "clarityScore": null,
-    "priorityScore": 32,
-    "priorityReasons": [
-      "Priority: medium (+20)",
-      "Client impact flag (+10)",
-      "Backlog — not started (+2)"
-    ],
     "_generated": true
   },
   {
@@ -2208,11 +1734,6 @@
     "clientImpact": false,
     "spillover": false,
     "clarityScore": null,
-    "priorityScore": 22,
-    "priorityReasons": [
-      "Priority: medium (+20)",
-      "Backlog — not started (+2)"
-    ],
     "_generated": true
   }
 ]

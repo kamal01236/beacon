@@ -33,7 +33,7 @@ export const NAV: Record<Role, NavItem[]> = {
     { key: "overview", label: "Overview", href: "/overview" },
     { key: "agent", label: "Agent", href: "/agent" },
     { key: "board", label: "Board", href: "/board" },
-    { key: "inbox", label: "Inbox", href: "/inbox", badge: "5" },
+    { key: "inbox", label: "Inbox", href: "/inbox" },
     { key: "delivery", label: "Delivery", href: "/delivery" },
     { key: "people", label: "People", href: "/people" },
     { key: "insights", label: "Insights", href: "/insights" },
@@ -43,7 +43,6 @@ export const NAV: Record<Role, NavItem[]> = {
     { key: "overview", label: "Overview", href: "/manager" },
     { key: "agent", label: "Agent", href: "/agent" },
     { key: "delivery", label: "Delivery", href: "/delivery" },
-    { key: "people", label: "People", href: "/people" },
     { key: "insights", label: "Insights", href: "/insights" },
   ],
   member: [

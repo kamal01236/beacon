@@ -1,10 +1,13 @@
 // Deterministic seed expander.
 //
-// Grows the hand-crafted demo data (which stays untouched) up to ~100 work items
-// across four sprints, with owners, dependencies, statuses, explainable scores
-// (score == sum of reasons) and updates — so the UI and the agent have realistic
-// volume to work with. No connectors, no DB: this writes the predefined JSON the
-// app reads. Re-runnable and stable (seeded PRNG).
+// Grows the hand-crafted demo data up to ~100 work items across four sprints,
+// with owners, dependencies, statuses and updates — so the UI and the agent have
+// realistic volume to work with. No connectors, no DB: this writes the predefined
+// JSON the app reads. Re-runnable and stable (seeded PRNG).
+//
+// The seed holds only RAW tracker facts. Attention scores, blocker signals and
+// confidence are never stored here — the app computes them (lib/priorityScore.ts,
+// lib/detect.ts, lib/agent.ts), exactly as it would over a live Jira/ADO feed.
 //
 // Run:  node scripts/generate-seed.mjs
 
@@ -30,9 +33,14 @@ const chance = (p) => rnd() < p;
 const members = read("members.json").map((m) => m.id); // m1..m6
 // keep only the hand-crafted rows; drop anything a previous run generated so
 // this script is idempotent.
-const existingItems = read("items.json").filter((i) => !i._generated);
+// Derived fields from older seed versions are stripped: they are computed now.
+const existingItems = read("items.json")
+  .filter((i) => !i._generated)
+  .map(({ priorityScore, priorityReasons, blockerDetectedByAI, blockerDetectedDate, ...rest }) => rest);
 const craftedIds = new Set(existingItems.map((i) => i.id));
-const existingUpdates = read("updates.json").filter((u) => craftedIds.has(u.itemId));
+const existingUpdates = read("updates.json")
+  .filter((u) => craftedIds.has(u.itemId))
+  .map(({ blockerSignal, blockerSignalConfidence, blockerSignalKeywords, aiNote, ...rest }) => rest);
 const sprints = read("sprints.json");
 
 // --- two more sprints for history + backlog (keeps s1 completed, s2 active) -
@@ -75,21 +83,6 @@ function nextId(type) {
   return `${prefix[type]}-${String(n).padStart(3, "0")}`;
 }
 
-function reasonsFor(type, priority, status, clientImpact, deps, sprintStatus) {
-  const r = [];
-  const pr = { high: 30, medium: 20, low: 10 }[priority];
-  r.push(`Priority: ${priority} (+${pr})`);
-  if (status === "blocked") r.push("Active blocker (+30)");
-  if (status === "overdue") r.push("Overdue (+45)");
-  if (status === "spillover") r.push("Spillover item (+15)");
-  if (status === "monitoring") r.push("Monitoring — no mitigation yet (+12)");
-  if (clientImpact) r.push("Client impact flag (+10)");
-  if (deps > 0) r.push(`Dependent items: ${deps} (+8)`);
-  if (sprintStatus === "active" && (status === "in_progress" || status === "todo")) r.push("In the active sprint (+6)");
-  if (status === "todo" && sprintStatus === "planned") r.push("Backlog — not started (+2)");
-  return r;
-}
-const sumReasons = (r) => r.reduce((a, s) => a + (parseInt((s.match(/\(([+-]?\d+)/) || [])[1], 10) || 0), 0);
 
 function makeItem(sprint, forcedStatus) {
   const type = (() => {
@@ -112,8 +105,7 @@ function makeItem(sprint, forcedStatus) {
     else if (sprint.status === "planned") status = "todo";
     else status = pick(["in_progress", "in_progress", "done", "todo", "monitoring"]);
   }
-  const deps = chance(0.22) ? 1 : 0;
-  const reasons = reasonsFor(type, priority, status, clientImpact, deps, sprint.status);
+  chance(0.22); // retired draw, kept so the seeded sequence (and the dataset) stays stable
 
   // due date within the sprint window
   const start = new Date(sprint.startDate).getTime();
@@ -128,8 +120,6 @@ function makeItem(sprint, forcedStatus) {
     blocker: null, dependsOn: [], clientImpact,
     spillover: status === "spillover",
     clarityScore: type === "requirement" ? pick([null, 5, 6, 7, 8, 4]) : null,
-    priorityScore: sumReasons(reasons),
-    priorityReasons: reasons,
     _generated: true,
   };
 }
@@ -157,12 +147,18 @@ for (const sprint of sprints) {
           sprintDay: d, statusRaw: it.status, statusStructured: it.status,
           progressText: `Progress on ${it.title.toLowerCase()} — day ${d}.`,
           nextAction: d >= lastDay ? `Continue ${it.title.toLowerCase()}.` : null,
-          blockerText: null, blockerSignal: false, aiStructured: true, submittedOnTime: fresh,
+          blockerText: null, aiStructured: true, submittedOnTime: fresh,
         });
       }
     }
   }
 }
+
+// Explicit cross-item dependencies on generated rows (the generator can't infer
+// them from titles). The Billing screen can't ship until the Payment gateway does,
+// which is what makes the "cannot deliver" roll-up real rather than asserted.
+const LINKS = { "req-027": ["req-001"] };
+for (const it of generated) if (LINKS[it.id]) it.dependsOn = LINKS[it.id];
 
 write("sprints.json", sprints);
 write("items.json", [...existingItems, ...generated]);
@@ -172,6 +168,3 @@ const all = [...existingItems, ...generated];
 console.log(`items: ${all.length} total (${generated.length} generated, ${existingItems.length} crafted)`);
 for (const s of sprints) console.log(`  ${s.id} (${s.status}): ${all.filter((i) => i.sprintId === s.id).length}`);
 console.log(`updates: ${existingUpdates.length + updates.length} total (${updates.length} generated)`);
-// integrity: every item's score equals the sum of its reasons
-const bad = all.filter((i) => i.priorityReasons && i.priorityScore !== sumReasons(i.priorityReasons));
-console.log(`score==sum(reasons) mismatches: ${bad.length ? bad.map((b) => b.id).join(",") : "NONE"}`);

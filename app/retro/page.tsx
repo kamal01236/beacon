@@ -1,46 +1,42 @@
-import { activeItems } from "@/lib/data";
+"use client";
+
+import { retroThemes } from "@/lib/insights";
+import { effective, undo } from "@/lib/events";
+import { firstName } from "@/lib/data";
+import { useActor, useWorld } from "@/lib/useWorld";
 
 export default function RetroPage() {
-  const items = activeItems();
-  const spillovers = items.filter((i) => i.spillover);
-  const blocked = items.filter((i) => i.blocker);
-
-  const themes = [
-    {
-      title: "External dependencies surface late",
-      evidence: `${blocked.length} blocked item(s); REQ-001's Stripe signature blocker was in day-3 wording before it was raised.`,
-      action: "Add a 'blocked-by external' flag at planning and review dependencies daily.",
-    },
-    {
-      title: "Ambiguous acceptance criteria cause rework",
-      evidence: "REQ-001 story scored 3/10 for clarity; 6 gaps found.",
-      action: "Run the clarity checker before a story enters the sprint.",
-    },
-    {
-      title: "Spillover carries silent risk",
-      evidence: `${spillovers.length} item(s) carried from Sprint 1; one had no fresh update for 2 days.`,
-      action: "Treat spillover as first-class work with its own owner and cadence.",
-    },
-  ];
+  const w = useWorld();
+  const { act, canAct } = useActor();
+  const themes = retroThemes(w);
+  const adopted = effective(w.events).filter((e) => e.kind === "retro.adopted") as Extract<(typeof w.events)[number], { kind: "retro.adopted" }>[];
 
   return (
     <>
       <h1 className="h1">Retrospective</h1>
-      <div className="sub">AI groups the sprint&apos;s signals into themes with evidence — you decide the actions. Carried actions are tracked, not lost.</div>
+      <div className="sub">Themes are built from this sprint&apos;s blockers, update wording, dependencies and spillover — each with its evidence. The team decides which actions to adopt.</div>
 
-      {themes.map((t) => (
-        <div key={t.title} className="card" style={{ marginTop: 14 }}>
-          <div className="ct">{t.title}</div>
-          <div className="sub" style={{ marginTop: 6 }}><b>Evidence:</b> {t.evidence}</div>
-          <div className="banner ai" style={{ marginTop: 10 }}>
-            <div className="bt"><b>Suggested action:</b> {t.action}</div>
+      {themes.map((t) => {
+        const a = adopted.find((x) => x.themeId === t.id);
+        return (
+          <div key={t.id} className="card" style={{ marginTop: 14 }}>
+            <div className="ct">{t.title}</div>
+            <ul style={{ margin: "8px 0 0", paddingLeft: 18, fontSize: "var(--t-body)", color: "var(--ink-3)", lineHeight: 1.5 }}>
+              {t.evidence.map((e, i) => <li key={i}>{e}</li>)}
+            </ul>
+            <div className="banner ai" style={{ marginTop: 10 }}>
+              <div className="bt"><b>Suggested action:</b> {t.action}</div>
+            </div>
+            <div className="decide">
+              {a ? (
+                <span className="stamp"><b>Adopted</b> by {firstName(a.actor)} — tracked into next sprint{canAct && <> · <button className="link" type="button" onClick={() => undo(a.id, a.actor)}>undo</button></>}</span>
+              ) : (
+                canAct && <button className="btn p sm" type="button" onClick={() => act({ kind: "retro.adopted", themeId: t.id, action: t.action })}>Adopt action</button>
+              )}
+            </div>
           </div>
-          <div className="btnrow" style={{ marginTop: 10 }}>
-            <button className="btn p sm" type="button">Adopt action</button>
-            <button className="btn s sm" type="button">Edit</button>
-          </div>
-        </div>
-      ))}
+        );
+      })}
     </>
   );
 }

@@ -11,7 +11,6 @@
     "progressText": "Started Stripe SDK research. Setting up sandbox account.",
     "nextAction": "Complete SDK setup and run first test transaction by tomorrow.",
     "blockerText": null,
-    "blockerSignal": false,
     "aiStructured": true,
     "submittedOnTime": true
   },
@@ -27,7 +26,6 @@
     "progressText": "Integrating Stripe checkout flow. Running into some OAuth config issues but making progress.",
     "nextAction": "Resolve OAuth config and move to webhook setup.",
     "blockerText": null,
-    "blockerSignal": false,
     "aiStructured": true,
     "submittedOnTime": true
   },
@@ -43,16 +41,8 @@
     "progressText": "Struggling with webhook signature verification. The Stripe documentation seems to contradict the SDK behaviour. Might need someone to look at this with me. Not sure how to proceed from here.",
     "nextAction": "Will try a different verification approach tomorrow.",
     "blockerText": null,
-    "blockerSignal": true,
-    "blockerSignalConfidence": "high",
-    "blockerSignalKeywords": [
-      "struggling",
-      "might need someone",
-      "not sure how to proceed"
-    ],
     "aiStructured": true,
-    "submittedOnTime": true,
-    "aiNote": "Language pattern indicates undeclared blocker. Recommended facilitator review."
+    "submittedOnTime": true
   },
   {
     "id": "upd-s2-req001-d4-MISSING",
@@ -66,10 +56,8 @@
     "progressText": null,
     "nextAction": null,
     "blockerText": null,
-    "blockerSignal": false,
     "overdue": true,
-    "overdueHours": 24,
-    "aiNote": "No update received. Combined with Day 3 distress signal — priority score raised to 71. Facilitator nudge sent."
+    "overdueHours": 24
   },
   {
     "id": "upd-s2-req001-d5-MISSING",
@@ -83,10 +71,8 @@
     "progressText": null,
     "nextAction": null,
     "blockerText": null,
-    "blockerSignal": false,
     "overdue": true,
-    "overdueHours": 48,
-    "aiNote": "Second consecutive missing update. Priority score raised to 84. AI alert fired to Sarah Chen: 'REQ-001 shows signs of a hidden blocker. Marcus mentioned difficulty on Day 3 and has not updated since. Suggested action: Request Update with escalation option.'"
+    "overdueHours": 48
   },
   {
     "id": "upd-s2-req001-d6",
@@ -100,7 +86,6 @@
     "progressText": "Yes, I am blocked. The Stripe webhook HMAC verification fails every time I use the SDK's built-in verifySignature method. The Stripe docs say to use the raw body buffer but the SDK wraps it before passing it through. Cannot verify incoming webhooks at all.",
     "nextAction": "Need James to pair on this — think it might be a middleware ordering issue.",
     "blockerText": "Stripe webhook HMAC verification: Stripe docs contradict SDK middleware behaviour.",
-    "blockerSignal": true,
     "blockerFormallyRaised": true,
     "blockerOwnedBy": "m2",
     "aiStructured": true,
@@ -120,7 +105,6 @@
     "progressText": "James and I are pairing on the HMAC issue. We've identified the problem: the Express bodyParser middleware is consuming the raw body before the Stripe SDK can read it. Working on the fix now.",
     "nextAction": "Apply raw-body preservation middleware config. Estimated fix: 4 hours.",
     "blockerText": "Express bodyParser consuming raw body before Stripe signature check.",
-    "blockerSignal": true,
     "blockerFormallyRaised": true,
     "blockerOwnedBy": "m2",
     "blockerETA": "2026-10-07T17:00:00",
@@ -138,7 +122,6 @@
     "progressText": "Reviewed existing dashboard designs. Starting wireframes for the new layout.",
     "nextAction": "Complete wireframes and share for review by end of day 2.",
     "blockerText": null,
-    "blockerSignal": false,
     "submittedOnTime": true
   },
   {
@@ -152,7 +135,6 @@
     "progressText": "Wireframes complete and reviewed with Sarah. Starting component build — account summary card and transaction list.",
     "nextAction": "Complete account summary component.",
     "blockerText": null,
-    "blockerSignal": false,
     "submittedOnTime": true
   },
   {
@@ -166,7 +148,6 @@
     "progressText": "Account summary card done. Working on transaction list with pagination.",
     "nextAction": "Finish transaction list. Then active plans widget.",
     "blockerText": null,
-    "blockerSignal": false,
     "submittedOnTime": true
   },
   {
@@ -180,7 +161,6 @@
     "progressText": "Transaction list with pagination complete. Active plans widget 70% done.",
     "nextAction": "Finish active plans widget. Begin integration testing with SSO.",
     "blockerText": null,
-    "blockerSignal": false,
     "submittedOnTime": true
   },
   {
@@ -194,7 +174,6 @@
     "progressText": "All three widgets complete. Integration tests passing. Minor responsive layout issues to fix on mobile.",
     "nextAction": "Fix mobile breakpoint issues. Final QA hand-off to Aisha.",
     "blockerText": null,
-    "blockerSignal": false,
     "submittedOnTime": true
   },
   {
@@ -208,7 +187,6 @@
     "progressText": "Mobile layout fixed. Handed off to Aisha for QA. Addressing two minor feedback items.",
     "nextAction": "Resolve QA feedback. Ready for review tomorrow.",
     "blockerText": null,
-    "blockerSignal": false,
     "submittedOnTime": true
   },
   {
@@ -222,7 +200,6 @@
     "progressText": "QA feedback addressed. Awaiting final sign-off from Aisha before marking done.",
     "nextAction": "Aisha final check — expect done today.",
     "blockerText": null,
-    "blockerSignal": false,
     "submittedOnTime": true
   },
   {
@@ -236,7 +213,6 @@
     "progressText": "Evaluating PDF generation libraries. Shortlisted react-pdf and puppeteer.",
     "nextAction": "Prototype both approaches, pick the simpler one.",
     "blockerText": null,
-    "blockerSignal": false,
     "submittedOnTime": true
   },
   {
@@ -250,7 +226,6 @@
     "progressText": "Chose react-pdf. Basic transaction history template rendering correctly.",
     "nextAction": "Add account summary section and styling.",
     "blockerText": null,
-    "blockerSignal": false,
     "submittedOnTime": true
   },
   {
@@ -264,7 +239,6 @@
     "progressText": "Account summary section added. File download endpoint working.",
     "nextAction": "Wire up the export button in the dashboard UI (waiting on req-002).",
     "blockerText": null,
-    "blockerSignal": false,
     "submittedOnTime": true
   },
   {
@@ -278,7 +252,6 @@
     "progressText": "Also working through API documentation (ACT-003). PDF backend complete and unit tested.",
     "nextAction": "Front-end integration once req-002 is ready.",
     "blockerText": null,
-    "blockerSignal": false,
     "submittedOnTime": true
   },
   {
@@ -292,7 +265,6 @@
     "progressText": "Front-end export button integrated with req-002 dashboard. End-to-end flow working.",
     "nextAction": "QA hand-off. Also continuing with ACT-003 documentation.",
     "blockerText": null,
-    "blockerSignal": false,
     "submittedOnTime": true
   },
   {
@@ -306,7 +278,6 @@
     "progressText": "In QA with Aisha. Also pairing with Marcus on the Stripe blocker (req-001).",
     "nextAction": "Resolve QA feedback for req-003. Continue on Marcus's blocker.",
     "blockerText": null,
-    "blockerSignal": false,
     "submittedOnTime": true
   },
   {
@@ -320,7 +291,6 @@
     "progressText": "QA sign-off on req-003 pending one final fix (page break formatting). Also making progress on req-001 blocker with Marcus.",
     "nextAction": "Fix page break issue. Should be done today.",
     "blockerText": null,
-    "blockerSignal": false,
     "submittedOnTime": true
   },
   {
@@ -334,7 +304,6 @@
     "progressText": "Confirmed with Raj Mehta that he needs Stripe sandbox keys and the OAuth client ID/secret. Chasing our infrastructure team for the credentials.",
     "nextAction": "Obtain credentials from infra and send to Claire Oduya by Wed Oct 3.",
     "blockerText": null,
-    "blockerSignal": false,
     "submittedOnTime": true
   },
   {
@@ -348,7 +317,6 @@
     "progressText": "Still waiting on infra team for credentials. Escalated to tech lead.",
     "nextAction": "Infra to provide credentials by EOD today.",
     "blockerText": null,
-    "blockerSignal": false,
     "submittedOnTime": true
   },
   {
@@ -363,8 +331,7 @@
     "nextAction": null,
     "overdue": true,
     "overdueHours": 0,
-    "clientDelayActive": true,
-    "aiNote": "Due date passed. Client-delay risk flag active. Facilitator notified."
+    "clientDelayActive": true
   },
   {
     "id": "upd-s2-act001-d4",
@@ -391,7 +358,6 @@
     "progressText": "Reached out to Claire Oduya at Apex IT to start the UAT date discussion.",
     "nextAction": "Await Claire's availability. Confirm week of 13 Oct.",
     "blockerText": null,
-    "blockerSignal": false,
     "submittedOnTime": true
   },
   {
@@ -405,7 +371,6 @@
     "progressText": "Claire confirmed she is available Mon 13 and Tue 14 Oct. Awaiting confirmation from our side that Aisha can attend on Mon 13.",
     "nextAction": "Confirm with Aisha and send calendar invite.",
     "blockerText": null,
-    "blockerSignal": false,
     "submittedOnTime": true
   },
   {
@@ -419,7 +384,6 @@
     "progressText": "Aisha confirmed Mon 13 Oct. Calendar invite sent. UAT session booked 09:00-13:00.",
     "nextAction": "Prepare UAT script and test cases for Aisha.",
     "blockerText": null,
-    "blockerSignal": false,
     "submittedOnTime": true
   },
   {
@@ -434,7 +398,6 @@
     "progressText": "Progress on dashboard third-party rate limits — day 1.",
     "nextAction": null,
     "blockerText": null,
-    "blockerSignal": false,
     "aiStructured": true,
     "submittedOnTime": true
   },
@@ -450,7 +413,6 @@
     "progressText": "Progress on dashboard third-party rate limits — day 2.",
     "nextAction": null,
     "blockerText": null,
-    "blockerSignal": false,
     "aiStructured": true,
     "submittedOnTime": true
   },
@@ -466,7 +428,6 @@
     "progressText": "Progress on dashboard third-party rate limits — day 3.",
     "nextAction": null,
     "blockerText": null,
-    "blockerSignal": false,
     "aiStructured": true,
     "submittedOnTime": true
   },
@@ -482,7 +443,6 @@
     "progressText": "Progress on dashboard third-party rate limits — day 4.",
     "nextAction": null,
     "blockerText": null,
-    "blockerSignal": false,
     "aiStructured": true,
     "submittedOnTime": true
   },
@@ -498,7 +458,6 @@
     "progressText": "Progress on dashboard third-party rate limits — day 5.",
     "nextAction": null,
     "blockerText": null,
-    "blockerSignal": false,
     "aiStructured": true,
     "submittedOnTime": true
   },
@@ -514,7 +473,6 @@
     "progressText": "Progress on dashboard third-party rate limits — day 7.",
     "nextAction": null,
     "blockerText": null,
-    "blockerSignal": false,
     "aiStructured": true,
     "submittedOnTime": true
   },
@@ -530,7 +488,6 @@
     "progressText": "Progress on redesign the billing screen — day 1.",
     "nextAction": null,
     "blockerText": null,
-    "blockerSignal": false,
     "aiStructured": true,
     "submittedOnTime": true
   },
@@ -546,7 +503,6 @@
     "progressText": "Progress on redesign the billing screen — day 3.",
     "nextAction": null,
     "blockerText": null,
-    "blockerSignal": false,
     "aiStructured": true,
     "submittedOnTime": true
   },
@@ -562,7 +518,6 @@
     "progressText": "Progress on redesign the billing screen — day 4.",
     "nextAction": null,
     "blockerText": null,
-    "blockerSignal": false,
     "aiStructured": true,
     "submittedOnTime": true
   },
@@ -578,7 +533,6 @@
     "progressText": "Progress on redesign the billing screen — day 5.",
     "nextAction": null,
     "blockerText": null,
-    "blockerSignal": false,
     "aiStructured": true,
     "submittedOnTime": true
   },
@@ -594,7 +548,6 @@
     "progressText": "Progress on redesign the billing screen — day 6.",
     "nextAction": null,
     "blockerText": null,
-    "blockerSignal": false,
     "aiStructured": true,
     "submittedOnTime": true
   },
@@ -610,7 +563,6 @@
     "progressText": "Progress on schedule settings walkthrough with apex — day 1.",
     "nextAction": null,
     "blockerText": null,
-    "blockerSignal": false,
     "aiStructured": true,
     "submittedOnTime": true
   },
@@ -626,7 +578,6 @@
     "progressText": "Progress on schedule settings walkthrough with apex — day 2.",
     "nextAction": null,
     "blockerText": null,
-    "blockerSignal": false,
     "aiStructured": true,
     "submittedOnTime": true
   },
@@ -642,7 +593,6 @@
     "progressText": "Progress on schedule settings walkthrough with apex — day 3.",
     "nextAction": null,
     "blockerText": null,
-    "blockerSignal": false,
     "aiStructured": true,
     "submittedOnTime": true
   },
@@ -658,7 +608,6 @@
     "progressText": "Progress on schedule settings walkthrough with apex — day 4.",
     "nextAction": null,
     "blockerText": null,
-    "blockerSignal": false,
     "aiStructured": true,
     "submittedOnTime": true
   },
@@ -674,7 +623,6 @@
     "progressText": "Progress on schedule settings walkthrough with apex — day 6.",
     "nextAction": null,
     "blockerText": null,
-    "blockerSignal": false,
     "aiStructured": true,
     "submittedOnTime": true
   },
@@ -690,7 +638,6 @@
     "progressText": "Progress on schedule settings walkthrough with apex — day 7.",
     "nextAction": null,
     "blockerText": null,
-    "blockerSignal": false,
     "aiStructured": true,
     "submittedOnTime": true
   },
@@ -706,7 +653,6 @@
     "progressText": "Progress on add onboarding to the client portal — day 1.",
     "nextAction": null,
     "blockerText": null,
-    "blockerSignal": false,
     "aiStructured": true,
     "submittedOnTime": true
   },
@@ -722,7 +668,6 @@
     "progressText": "Progress on add onboarding to the client portal — day 3.",
     "nextAction": null,
     "blockerText": null,
-    "blockerSignal": false,
     "aiStructured": true,
     "submittedOnTime": true
   },
@@ -738,7 +683,6 @@
     "progressText": "Progress on add onboarding to the client portal — day 4.",
     "nextAction": null,
     "blockerText": null,
-    "blockerSignal": false,
     "aiStructured": true,
     "submittedOnTime": true
   },
@@ -754,7 +698,6 @@
     "progressText": "Progress on add onboarding to the client portal — day 6.",
     "nextAction": null,
     "blockerText": null,
-    "blockerSignal": false,
     "aiStructured": true,
     "submittedOnTime": true
   },
@@ -770,7 +713,6 @@
     "progressText": "Progress on add onboarding to the client portal — day 7.",
     "nextAction": null,
     "blockerText": null,
-    "blockerSignal": false,
     "aiStructured": true,
     "submittedOnTime": true
   },
@@ -786,7 +728,6 @@
     "progressText": "Progress on add reporting to the client portal — day 1.",
     "nextAction": null,
     "blockerText": null,
-    "blockerSignal": false,
     "aiStructured": true,
     "submittedOnTime": true
   },
@@ -802,7 +743,6 @@
     "progressText": "Progress on add reporting to the client portal — day 2.",
     "nextAction": null,
     "blockerText": null,
-    "blockerSignal": false,
     "aiStructured": true,
     "submittedOnTime": true
   },
@@ -818,7 +758,6 @@
     "progressText": "Progress on add reporting to the client portal — day 3.",
     "nextAction": null,
     "blockerText": null,
-    "blockerSignal": false,
     "aiStructured": true,
     "submittedOnTime": true
   },
@@ -834,7 +773,6 @@
     "progressText": "Progress on add reporting to the client portal — day 5.",
     "nextAction": null,
     "blockerText": null,
-    "blockerSignal": false,
     "aiStructured": true,
     "submittedOnTime": true
   },
@@ -850,7 +788,6 @@
     "progressText": "Progress on add reporting to the client portal — day 7.",
     "nextAction": "Continue add reporting to the client portal.",
     "blockerText": null,
-    "blockerSignal": false,
     "aiStructured": true,
     "submittedOnTime": true
   }
