@@ -17,7 +17,10 @@ export const kudos = kudosJson as unknown as Kudos[];
 export const stories = storiesJson as unknown as Story[];
 
 export const activeSprint = sprints.find((s) => s.id === ACTIVE_SPRINT_ID)!;
-export const lastSprint = sprints.find((s) => s.status === "completed")!;
+// the most recently completed sprint (by start date) — the baseline we compare against.
+export const lastSprint = sprints
+  .filter((s) => s.status === "completed")
+  .sort((a, b) => b.startDate.localeCompare(a.startDate))[0];
 
 export function memberById(id: string | null | undefined): Member | undefined {
   return id ? members.find((m) => m.id === id) : undefined;

@@ -1,5 +1,20 @@
 [
   {
+    "id": "s0",
+    "name": "Sprint 0",
+    "goal": "Project setup, discovery and environment provisioning",
+    "startDate": "2026-09-03",
+    "endDate": "2026-09-12",
+    "status": "completed",
+    "velocityGoal": 6,
+    "velocityActual": 5,
+    "client": "Apex Financial Services",
+    "project": "Client Portal Modernization",
+    "metrics": {
+      "note": "Pre-baseline setup sprint"
+    }
+  },
+  {
     "id": "s1",
     "name": "Sprint 1",
     "goal": "Establish authentication, CI/CD pipeline, and core dashboard layout",
@@ -36,9 +51,24 @@
       "participationRate": 0.87,
       "blockerVisibilityDays": 0.17,
       "updateQualityRate": 0.81,
-      "itemsWithOwner": 1.0,
-      "storiesReady": 0.50,
+      "itemsWithOwner": 1,
+      "storiesReady": 0.5,
       "aiExtractionAcceptanceRate": 0.92
+    }
+  },
+  {
+    "id": "s3",
+    "name": "Sprint 3",
+    "goal": "Refunds, saved payment methods, and reporting exports",
+    "startDate": "2026-10-15",
+    "endDate": "2026-10-24",
+    "status": "planned",
+    "velocityGoal": 10,
+    "velocityActual": null,
+    "client": "Apex Financial Services",
+    "project": "Client Portal Modernization",
+    "metrics": {
+      "note": "Planned — backlog being readied"
     }
   }
 ]
