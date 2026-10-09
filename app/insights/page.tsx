@@ -1,4 +1,8 @@
+"use client";
+
 import Link from "next/link";
+import { Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { activeSprint, lastSprint, activeItems, updates } from "@/lib/data";
 
 const LENSES = [
@@ -11,8 +15,16 @@ function pct(n: number) {
   return `${Math.round(n * 100)}%`;
 }
 
-export default function InsightsPage({ searchParams }: { searchParams: { view?: string } }) {
-  const view = searchParams.view ?? "root";
+export default function InsightsPage() {
+  return (
+    <Suspense fallback={<div className="sub">Loading insights…</div>}>
+      <InsightsInner />
+    </Suspense>
+  );
+}
+
+function InsightsInner() {
+  const view = useSearchParams().get("view") ?? "root";
   const s1 = lastSprint.metrics;
   const s2 = activeSprint.metrics;
 

@@ -6,6 +6,12 @@ import {
 import { daysFromToday } from "@/lib/demo";
 import { attentionScore } from "@/lib/priorityScore";
 import { Avatar, StatusPill, ScoreReasons, Crumb, AiBlock } from "@/components/ui";
+import { items as allItems } from "@/lib/data";
+
+// Pre-render every item page (required for static export; harmless otherwise).
+export function generateStaticParams() {
+  return allItems.map((i) => ({ id: i.id }));
+}
 
 export default function ItemDetailPage({ params }: { params: { id: string } }) {
   const item = itemById(params.id);

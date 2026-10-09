@@ -6,6 +6,12 @@ import {
 import { sprintDay } from "@/lib/demo";
 import { attentionScore } from "@/lib/priorityScore";
 import { Avatar, TypeTag, StatusPill, ScoreReasons, Crumb, AiBlock } from "@/components/ui";
+import { members } from "@/lib/data";
+
+// Pre-render every member page (required for static export; harmless otherwise).
+export function generateStaticParams() {
+  return members.map((m) => ({ memberId: m.id }));
+}
 
 export default function MemberDetailPage({ params }: { params: { memberId: string } }) {
   const m = memberById(params.memberId);

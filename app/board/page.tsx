@@ -1,4 +1,8 @@
+"use client";
+
 import Link from "next/link";
+import { Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { activeItems, memberById } from "@/lib/data";
 import { attentionScore, byAttention } from "@/lib/priorityScore";
 import { Avatar, TypeTag, StatusPill, ScoreReasons } from "@/components/ui";
@@ -12,20 +16,25 @@ const FILTERS = [
   { label: "Decisions", q: "/board?type=decision" },
 ];
 
-export default function BoardPage({
-  searchParams,
-}: {
-  searchParams: { status?: string; min?: string; type?: string };
-}) {
+function BoardInner() {
+  const sp = useSearchParams();
+  const status = sp.get("status") ?? undefined;
+  const type = sp.get("type") ?? undefined;
+  const min = sp.get("min") ?? undefined;
+
   let items = byAttention(activeItems());
-  const { status, min, type } = searchParams;
   if (status === "spillover") items = items.filter((i) => i.spillover);
   else if (status) items = items.filter((i) => i.status === status);
   if (type) items = items.filter((i) => i.type === type);
   if (min) items = items.filter((i) => attentionScore(i).value >= Number(min));
 
-  const activeLabel =
-    min ? "Needs attention" : status ? status[0].toUpperCase() + status.slice(1) : type ? "Decisions" : "All";
+  const activeLabel = min
+    ? "Needs attention"
+    : status
+    ? status[0].toUpperCase() + status.slice(1)
+    : type
+    ? "Decisions"
+    : "All";
 
   return (
     <>
@@ -36,11 +45,7 @@ export default function BoardPage({
 
       <div className="chips" style={{ marginTop: 14 }}>
         {FILTERS.map((f) => (
-          <Link
-            key={f.label}
-            href={f.q}
-            className={`chip${f.label === activeLabel ? " ai" : ""}`}
-          >
+          <Link key={f.label} href={f.q} className={`chip${f.label === activeLabel ? " ai" : ""}`}>
             {f.label}
           </Link>
         ))}
@@ -70,5 +75,13 @@ export default function BoardPage({
         })}
       </div>
     </>
+  );
+}
+
+export default function BoardPage() {
+  return (
+    <Suspense fallback={<div className="sub">Loading board…</div>}>
+      <BoardInner />
+    </Suspense>
   );
 }
