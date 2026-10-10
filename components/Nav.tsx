@@ -6,6 +6,12 @@ import { useRole } from "./RoleProvider";
 import { Icon } from "./Icon";
 import { NAV, ROLE_NOTE } from "@/lib/nav";
 
+const ROLE_HEAD: Record<string, string> = {
+  facilitator: "Facilitator",
+  manager: "Manager · read-only",
+  member: "My view",
+};
+
 export function Nav() {
   const { role } = useRole();
   const pathname = usePathname();
@@ -13,15 +19,17 @@ export function Nav() {
 
   return (
     <nav className="sidenav" aria-label={`${role} navigation`}>
+      <div className="navlab">{ROLE_HEAD[role] ?? role}</div>
       {items.map((it) => {
-        const active =
-          pathname === it.href || pathname.startsWith(it.href + "/");
+        const active = pathname === it.href || pathname.startsWith(it.href + "/");
         return (
           <Link
             key={it.key}
             href={it.href}
             className={active ? "nav on" : "nav"}
             aria-current={active ? "page" : undefined}
+            // the label when the rail is collapsed to icons
+            title={it.label}
           >
             <Icon name={it.key} />
             <span>{it.label}</span>

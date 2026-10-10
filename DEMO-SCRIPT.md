@@ -13,6 +13,16 @@
 > Everything else you'll see is computed and works end to end, and a person stays in
 > control of every action."*
 
+## 0. Get anywhere in one keystroke (15 sec) — any screen
+
+Press **Ctrl-K** (or **/**), type **blocked**: the blocked item and the board
+view behind it, both live. Escape.
+> *"Everything I'll show is one keystroke away, and it searches the real board,
+> not a cached index."*
+
+*(Optional, if the room is on a projector or someone asks: the sun/moon button
+switches light and dark, and the one beside it tightens the density.)*
+
 ## 1. The roll-up Jira hides (60 sec) — Overview, then Delivery
 
 1. Read the red headline: **REQ-001 cannot be delivered** — blocked 2 days, due today.
@@ -53,7 +63,9 @@
 1. **Agent**: REQ-004 is now *Blocked*, and the **tracker outbox** holds the approved
    change, marked as simulated.
 2. Filter to **Status out of date**, pick a reason on one signal and click **Dismiss**. On another
-   signal, **Approve** a proposed comment.
+   signal, **Approve** a proposed comment. Each one raises a confirmation naming exactly what was
+   recorded, with **Undo** on it.
+   > *"The way back is never more than one click from where you acted."*
 3. **Activity log**: every decision, by whom, in order. Click **undo** on one, and the screen reverts.
 
 ## 6. Is the agent earning trust? (40 sec) — Insights
@@ -67,7 +79,8 @@
 ## 7. Privacy by design (20 sec) — switch to Dana · Manager
 
 Read-only banner on the Agent page; **People** isn't in the manager's nav, and a member
-link shows *Member views stay with the team*.
+link shows *Member views stay with the team*. Press **Ctrl-K**, type **marcus** — no person
+drill-down is offered either, so the shortcut can't route around the rule.
 
 ## Close — the roadmap (20 sec)
 
@@ -83,6 +96,7 @@ link shows *Member views stay with the team*.
 | A previous run left decisions behind | *Agent → Your data → Clear all* |
 | Wrong persona | Persona menu, top right |
 | Browser storage blocked (private window) | Decisions still work for the page view; mention that the live store is server-side (phase 3) |
+| The room's projector washes the screen out | Click the theme button in the header (light / dark), and the one beside it for density |
 | No network | Use `npm run dev` locally — the whole app runs offline |
 
 ## Pitch one-liner (for Q&A)

@@ -78,7 +78,7 @@ export default function OverviewPage() {
           <div className="ct">Velocity <span className="mut">goal vs actual</span></div>
           <VelocityBars bars={velocity} />
           <div className="legend">
-            <span><i style={{ background: "#C9D6E2" }} />goal</span>
+            <span><i style={{ background: "var(--series-2)" }} />goal</span>
             <span><i style={{ background: "var(--ai-fill)" }} />actual</span>
           </div>
         </div>

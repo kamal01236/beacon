@@ -108,6 +108,23 @@ Clickable status donut, burndown (ideal + real endpoints; future days not drawn)
 velocity, impact deltas (each labelled *computed* or *recorded by the team*), progress
 rings and a team-level pulse (streak, badge wall, kudos — no leaderboard).
 
+### 9. The interface (`app/globals.css`, `components/`)
+One stylesheet is the whole design system — screens compose its classes and
+never define their own colours or shell, so a change lands everywhere at once.
+
+| What | How it works |
+|---|---|
+| **Light and dark** | Every colour is a token, defined three times (light, system-dark, chosen-dark) so the in-app toggle wins over the OS either way. An inline boot script paints the theme before first paint, so there is no flash. |
+| **Density** | Comfortable or compact, turning five spacing/type tokens — for the person who lives on the board all day. |
+| **Command palette** | **Ctrl/Cmd-K** or **/** from anywhere: work items (by code, title, status *or* owner), saved board views with live counts, people, screens and the appearance commands. It searches the live world, so an item just moved to Blocked reads as blocked. Empty, it ranks by attention score. Person drill-downs are omitted for the manager role, so the palette can't route around the privacy rule. |
+| **Decisions confirm themselves** | Every decision recorded through `useActor().act()` raises a toast naming what was recorded, with **Undo** attached — the way back at the moment of doubt. The Activity log keeps the permanent one. |
+| **Keyboard and assistive tech** | Skip link, one never-removed focus ring, `aria-live` on decisions, arrow/Enter/Escape in the palette, Escape out of the persona menu. |
+| **Scales** | Fluid type from a 13-inch laptop to a 4K display, content capped at 1520px, a collapsible nav rail, 44px touch targets on touch pointers, and `prefers-reduced-motion`, `prefers-contrast` and print all honoured. |
+
+Theme, density and the rail are per-viewer conveniences in this browser
+(`lib/prefs.ts`). They never reach the event log, never change a finding, and
+are included in *Your data* export and delete.
+
 ## Code map
 
 ```
@@ -115,11 +132,12 @@ app/            one folder per screen; all render inside components/AppShell.tsx
   overview/ agent/ board/ item/[id]/ delivery/ people/ people/[memberId]/
   insights/ retro/ inbox/ manager/ my-work/ get-help/ trends/
 components/     AppShell, Nav, PersonaSwitcher, RoleProvider, ui, charts,
-                hic (human-in-control controls), privacy
+                hic (human-in-control controls), privacy,
+                CommandPalette, Toaster, ThemeControls
 lib/            data (seed + World), demo (frozen clock), facts, priorityScore,
                 detect, agent, insights (brief, roll-up, root cause, retro, adoption),
                 metrics (charts), events (decision log), world (seed + events),
-                useWorld (React hooks), nav, types
+                useWorld (React hooks), prefs (theme/density), toast, nav, types
 data/           seed JSON + kb.json
 scripts/        generate-seed.mjs
 ```
@@ -134,10 +152,10 @@ My trends.
 | Phase | Scope | Status |
 |---|---|---|
 | **1. Honest engine** | Computed score (14 rules), computed + calibrated confidence, language detector, computed brief / roll-up / root cause / retro / impact; seed reduced to raw facts | **Done** |
-| **2. Human in control, end to end** | Decision log; accept / dismiss / snooze; previewed + approved changes and outbox; author-first prompts; member updates; undo; read-only manager; adoption metrics; privacy panel | **Done** (browser store) |
+| **2. Human in control, end to end** | Decision log; accept / dismiss / snooze; previewed + approved changes and outbox; author-first prompts; member updates; undo (in the log and on every confirmation toast); read-only manager; adoption metrics; privacy panel; light/dark, density, command palette and a keyboard + screen-reader baseline | **Done** (browser store) |
 | **3. Live agent on WSL** | Server-side store (SQLite → Postgres) replaces localStorage so the team shares one record; run / answer API; real clock + scheduler; daily snapshots → real burndown, cumulative flow, cycle time; LLM detection behind the same `Detection` shape, judged against the accept/dismiss record; extraction from newly pasted meeting notes; team-tunable rule weights | Next |
 | **4. Pilot with one team** | Jira / ADO read sync and approved write-back (AGENT-ARCHITECTURE.md §10); SSO + roles enforced on the server; Teams / Slack bot for questions and updates; a measured first-week baseline; consent statement and retention policy | Planned |
-| **5. Enterprise** | Many teams, programme roll-up and cross-team dependencies; audit export; data residency; admin configuration; accessibility review | Planned |
+| **5. Enterprise** | Many teams, programme roll-up and cross-team dependencies; audit export; data residency; admin configuration; full WCAG 2.2 AA audit on top of the phase-2 baseline; tenant theming from the token layer | Planned |
 
 Presenting the prototype: [DEMO-SCRIPT.md](DEMO-SCRIPT.md). Pitch and requirement
 mapping: [PROPOSAL.md](PROPOSAL.md). Agent design: [AGENT-ARCHITECTURE.md](AGENT-ARCHITECTURE.md).

@@ -31,7 +31,7 @@ export function statusBreakdown(w: World = SEED): StatusSlice[] {
     { key: "overdue", label: "Overdue", count: n((s) => s === "overdue"), color: "var(--overdue-fill)", href: "/board?status=overdue" },
     { key: "spillover", label: "Spillover", count: items.filter((i) => i.spillover).length, color: "var(--spill)", href: "/board?status=spillover" },
     { key: "monitoring", label: "Monitoring", count: n((s) => s === "monitoring"), color: "var(--ideal)", href: "/board?status=monitoring" },
-    { key: "todo", label: "To do", count: n((s) => s === "todo"), color: "#C9D6E2", href: "/board?status=todo" },
+    { key: "todo", label: "To do", count: n((s) => s === "todo"), color: "var(--series-2)", href: "/board?status=todo" },
   ];
   return slices.filter((s) => s.count > 0);
 }
