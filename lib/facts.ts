@@ -4,7 +4,7 @@
 
 import { activeItems, isDone, updatesForItem, type World } from "./data";
 import { daysFromToday, sprintDay, todayDay, ACTIVE_SPRINT_START } from "./demo";
-import { detect, type Detection } from "./detect";
+import { detect, detectionGeneration, type Detection } from "./detect";
 import type { Item, Update } from "./types";
 
 // Statuses for which a daily update is expected (so silence is meaningful).
@@ -37,14 +37,20 @@ export interface ItemFacts {
   ownerBlockedOn: Item[]; // other items of the same owner that are blocked
 }
 
-const cache = new WeakMap<World, Map<string, ItemFacts>>();
+// Per-world memo, stamped with the detection generation it was computed under
+// (lib/detect). The agent worker builds the model's input from factsFor() BEFORE
+// it installs the model's verdicts, so a generation-blind cache would pin every
+// item to its regex reading and the LLM detector would never change a signal.
+const cache = new WeakMap<World, { gen: number; facts: Map<string, ItemFacts> }>();
 
 const isBlocked = (i: Item) => i.status === "blocked" || (!!i.blocker && !isDone(i));
 const textOf = (u: Update) => [u.progressText, u.blockerText].filter(Boolean).join(" ");
 
 export function factsFor(item: Item, w: World): ItemFacts {
-  let m = cache.get(w);
-  if (!m) cache.set(w, (m = new Map()));
+  const gen = detectionGeneration();
+  let entry = cache.get(w);
+  if (!entry || entry.gen !== gen) cache.set(w, (entry = { gen, facts: new Map() }));
+  const m = entry.facts;
   const hit = m.get(item.id);
   if (hit) return hit;
 

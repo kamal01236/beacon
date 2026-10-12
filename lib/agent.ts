@@ -183,7 +183,6 @@ const quote = (s: string, n = 110) => (s.length > n ? `${s.slice(0, n).trimEnd()
 
 export function getSignals(w: World = SEED): AgentSignal[] {
   const out: AgentSignal[] = [];
-  const today = todayDay();
 
   const push = (s: Omit<AgentSignal, "state" | "decidedBy" | "reason">) => out.push({ ...s, ...decisionOf(s.id, w) });
 
@@ -280,8 +279,12 @@ export function getSignals(w: World = SEED): AgentSignal[] {
       });
     }
 
-    // 4. in-flight work that went quiet — the agent asks the owner (see getRequests)
+    // 4. in-flight work that went quiet — the agent asks the owner (see getRequests).
+    // This counts as an explanation: without it, a quiet item over the attention
+    // threshold raised BOTH this and the generic "at risk" signal below, telling
+    // the same person the same fact twice — the alert fatigue Beacon exists to cut.
     if (f.expectsDaily && f.staleDays >= 2) {
+      explained = true;
       push({
         id: id("quiet"), itemId: item.id, owner, kind: "missing-update", severity: "medium",
         summary: `${code(item)} has had no update for ${f.staleDays} days — below the daily cadence.`,

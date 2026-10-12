@@ -11,37 +11,37 @@ defines scope + next steps.
 
 ## A. Deploying the UI
 
-### Option 1 — GitHub Pages (static UI only)
-Pages serves static files from a repo. **Possible, with changes**; the agent on
-Pages is "frozen" (data baked at build time — no live schedule, no user-triggered
-run, no write-back).
+One codebase, two build targets (`scripts/build.mjs`, `next.config.mjs`), so the
+choice is an env var rather than a branch.
 
-Changes required to the current Next.js app:
-- `next.config.mjs`: `output: 'export'`, `basePath: '/beacon'`, `images: { unoptimized: true }`, `trailingSlash: true`.
-- `generateStaticParams()` on the dynamic routes `/item/[id]` and `/people/[memberId]` (we have fixed seed ids, so this is trivial).
-- Move request-time `searchParams` filtering (board, insights) to the **client**
-  (`useSearchParams`) — a static export has no server at request time.
-- Replace the `/` `redirect()` with a client redirect, add `public/.nojekyll`.
-- A GitHub Actions workflow that builds, exports to `out/`, and deploys with
-  `actions/deploy-pages`. Repo → Settings → Pages → Source = "GitHub Actions".
-- Live at `https://kamal01236.github.io/beacon/`.
+### Option 1 — GitHub Pages (static UI only) — **live**
+`BUILD_TARGET=pages` produces a static export: `output: 'export'`, `basePath: '/beacon'`,
+`generateStaticParams()` on `/item/[id]` and `/people/[memberId]`, client-side
+`useSearchParams` filtering on the board and insights. The build **hides `app/api`**
+for the duration of the export, because a static export cannot contain route
+handlers — so there is no backend there: no schedule, no triggered run, no
+write-back, and decisions stay in the viewer's own browser.
 
-Use when: you want a **free, shareable, read-only demo** of the UI and accept that
-the agent is illustrative.
+Pushes to `main` deploy it via `.github/workflows/deploy.yml`. Live at
+`https://kamal01236.github.io/beacon/`.
 
-### Option 2 — Vercel (recommended — full app + agent)
-Zero-config for Next.js. Gives SSR + **serverless functions** (for the agent's
-API routes and webhook receivers) + **Vercel Cron** (the schedule). One import of
-the GitHub repo. This is the only option that runs the real app *and* the agent in
-one place. Live at `https://beacon-<id>.vercel.app`.
+Use when you want a **free, shareable demo** and accept that the agent is
+illustrative. It is also the safest thing to present: it makes no network calls.
 
-### Option 3 — Container / enterprise host (Azure, Render, Fly)
-A Node container (or Azure Functions + a managed DB) when the client needs it
-inside their own cloud / VNet with SSO. Same app, same agent, their infra.
+### Option 2 — WSL / container / Vercel (full app + agent) — **built**
+The default build keeps `app/api` and serves the real backend. `npm run local`
+brings up the whole stack (database or `.data/`, build, server, worker) on a free
+port; see [BACKEND-PLAN.md](BACKEND-PLAN.md) §7 for the WSL walkthrough. A Node
+container or Vercel runs the same thing — on Vercel the worker's clock becomes
+Vercel Cron hitting `POST /api/agent/run`, which is all `agent/run.mjs` does.
 
-**Recommendation:** GitHub Pages for a quick public UI link **if needed**; Vercel
-(or a container) for anything that must actually *run the agent*. They can coexist:
-Pages shows the UI, a Vercel/Actions runtime hosts the agent API the UI calls.
+### Option 3 — Enterprise host (Azure, Render, Fly)
+The same container inside the client's cloud / VNet with SSO and a managed
+Postgres. Same app, same agent, their infra.
+
+**Recommendation:** Pages for the public link, and a server build (WSL locally, a
+container or Vercel hosted) for anything that must actually *run the agent*. They
+coexist: Pages shows the UI, the server runtime hosts the agent.
 
 ---
 
@@ -94,9 +94,19 @@ The agent keeps asking until it has what it needs to proceed.
 
 ### Enterprise-grade concerns
 Read-only, least-privilege connector scopes; per-team data isolation; an **audit
-log** of every agent action and every human approval; data retention controls;
-SSO for the UI; the tracker stays system-of-record (writes only via approved
-preview); and **no individual performance scoring**, by design.
+log** of every agent action and every human approval; SSO for the UI; the tracker
+stays system-of-record (writes only via approved preview); and **no individual
+performance scoring**, by design.
+
+**Data policy** is the part that constrains this runtime, so it is stated in code
+([lib/policy.ts](lib/policy.ts)) rather than as a promise. Because the event log
+*is* the audit trail, it is append-only: **retention** ages events out on a
+schedule (`POST /api/data/retention`, clocked by `scripts/retain.mjs` exactly as
+`agent/run.mjs` clocks runs — a cron entry or Vercel Cron in a hosted deploy) and
+records what it removed; **access** is a per-subject export; **erasure**
+pseudonymises the actor instead of deleting the decision, which needs the phase-4
+sign-in to know who is asking. Emptying the log is an operator reset, not a
+privacy control, and it appends a row saying so.
 
 ---
 
@@ -112,13 +122,17 @@ without approval; predictive completion dates; the native Teams/Slack channel.
 
 ---
 
-## D. Next steps
+## D. Where this stands
 
-The phased plan lives in one place — **README → Roadmap**. For runtime, phase 3
-("Live agent on WSL") means: move the decision log (`lib/events.ts`, today in the
-browser) to a server-side store behind the same event shapes (SQLite first, an
-interface so it swaps to Postgres); add `app/api/agent/run` and `/events` routes;
-run the agent on a schedule and on events instead of on render; keep daily snapshots
-for burndown, cumulative flow and cycle time. `lib/agent.ts` and `lib/world.ts`
-already define the shapes, so this is "persist and serve", not a redesign. Phase 4
-adds the connectors and approved write-back (AGENT-ARCHITECTURE.md §10).
+This document is the **runtime design**. What is built against it, and what is not,
+is tracked in exactly two places — so nothing here restates a status that can drift:
+
+- **The phased plan:** README → Roadmap.
+- **Backend status, file by file, with how each piece was verified:**
+  [BACKEND-PLAN.md](BACKEND-PLAN.md) §8.
+
+In short: the state store, the `/api` surface, the scheduled + manual triggers and
+the persisted human-in-the-loop requests of §B are built (Postgres or `.data/`);
+the **semantic memory** row (embeddings / pgvector) and the **connector cache** are
+not, and neither are the real Jira/ADO connectors or the webhook receiver — those
+are the phase-4 items in AGENT-ARCHITECTURE.md §10.

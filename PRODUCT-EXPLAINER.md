@@ -191,7 +191,7 @@ the blocker with an exact preview; *No* drops it.
 - **Questions the agent is asking** (re-asked each daily run until answered).
 - **Findings** by type — hidden blocker, blocked, cannot deliver, overdue, status out of date, missing update, at risk — each with evidence, source and confidence.
 - **Proposed tracker changes** with an exact preview. *Approve* puts them in a **tracker outbox** (simulated in the prototype).
-- **Activity log** with **Undo** on every entry, and a **Your data** panel (export / delete).
+- **Activity log** with **Undo** on every reversible entry, and a **Your data** panel: where the record lives, what is kept and for how long, and an export of your own events.
 
 **The pain it helps**
 "AI" that acts silently is a non-starter for most teams. Findings without a way to say
@@ -298,7 +298,8 @@ Managers get team-level truth; people keep their privacy. Both can trust it.
 - **No individual scoring, no leaderboard.** Adoption is counted per team and per type.
 - **Nothing is written to the tracker without approval**, and every decision can be undone.
 - **Every score and confidence shows its working** — no black box.
-- **Your data** panel: export or delete everything the prototype stores (it lives in your browser only).
+- **Your data** panel: it names where the record actually is — the team's shared server-side log when the backend is running, this browser alone when it is not — what is kept, and for how long. You can export the events *you* are the subject of at any time.
+- **A data policy, not a delete button.** The decision log is the audit trail, so it is append-only: data ages out after 180 days on a schedule the system applies (and the removal is itself logged, so a gap is never unexplained), and an erasure request is answered by **un-naming the person** rather than deleting the decision — the trail survives, the identity doesn't. Emptying the log is only a *demo reset*: facilitator-only, and it records that it happened.
 
 ---
 

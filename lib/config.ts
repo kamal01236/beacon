@@ -23,11 +23,16 @@ export interface AgentConfig {
   compose: boolean;
   openai: { apiKey: string | null; model: string; baseUrl: string; embedModel: string };
   ollama: { baseUrl: string; model: string; embedModel: string };
-  /** Scheduled-run cadence in minutes (matches AGENT_INTERVAL_MINS in lib/agent.ts). */
+  /** Scheduled-run cadence in minutes, from BEACON_AGENT_INTERVAL_MINS. */
   intervalMins: number;
-  /** Re-analyse an item the moment a tracker update for it arrives. */
+  /**
+   * Re-analyse an item the moment a tracker update for it arrives. The webhook
+   * receiver that would honour this is Phase 3 (README → Roadmap); today an
+   * event-triggered run is anything POSTing /api/agent/run with trigger "event".
+   */
   triggerOnEvent: boolean;
-  /** The sprint the agent watches. */
+  /** The sprint the agent watches. Phase 3 reads this to scope the tracker pull;
+   *  the prototype's seed is a single sprint, so ACTIVE_SPRINT_ID is the scope. */
   activeSprintId: string;
   /** "HH:MM-HH:MM" — no scheduled runs inside this window (empty = always on). */
   quietHours: string;

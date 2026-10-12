@@ -5,7 +5,7 @@
 // weight, so a detection is always explainable ("struggling" +3, "not sure how
 // to proceed" +3 …). This is the prototype detector; a language model can replace
 // it later behind the same Detection shape, judged against the accept/dismiss
-// record (lib/adoption.ts).
+// record (lib/metrics.ts).
 
 export interface Hit {
   phrase: string;
@@ -52,9 +52,21 @@ const RELIEF: [RegExp, string, number][] = [
 // everything else. The default (no override) is pure rule-based behaviour, so
 // the client bundle and the static export are completely unaffected.
 let overrides: Map<string, Detection> | null = null;
+let generation = 0;
 export function setDetectionOverrides(map: Map<string, Detection> | null): void {
   overrides = map;
+  generation++;
 }
+
+/**
+ * Bumped every time the override map changes. Anything that MEMOISES a value
+ * derived from `detect()` must include this in its cache key, or it will serve a
+ * verdict computed under the previous detector. lib/facts.ts caches per-item
+ * facts this way: without it, the agent worker's own pre-pass (which builds the
+ * model's input from `factsFor`) would warm the cache with regex verdicts and
+ * the installed model verdicts would never reach a signal.
+ */
+export const detectionGeneration = (): number => generation;
 
 export function detect(text: string | null | undefined): Detection {
   const t = text ?? "";

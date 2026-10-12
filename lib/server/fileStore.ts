@@ -42,6 +42,19 @@ export function appendEventFile(ev: BeaconEvent): void {
   writeArr(eventsFile, [...loadEventsFile(), ev]);
 }
 
+/** Erase the event log (the no-database twin of `DELETE FROM events`). */
+export function clearEventsFile(): void {
+  writeArr(eventsFile, []);
+}
+
+/** Drop events older than an ISO cutoff; returns how many went. The retention sweep. */
+export function pruneEventsFile(cutoff: string): number {
+  const all = loadEventsFile();
+  const keep = all.filter((e) => e.at >= cutoff);
+  if (keep.length !== all.length) writeArr(eventsFile, keep);
+  return all.length - keep.length;
+}
+
 export interface RunRow {
   at: string;
   trigger: string;

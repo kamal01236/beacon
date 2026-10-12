@@ -108,12 +108,15 @@ export function brief(w: World = SEED): Brief {
     detail = [
       `Blocked for ${f.blockedDays} day(s): ${(top.item.blocker ?? "status is blocked").replace(/\.$/, "")}.`,
       deps.length ? `${deps.map((d) => `${code(d)} still shows "${d.status.replace("_", " ")}"`).join(", ")} but waits on it — the tracker's roll-up hides this.` : "",
-      f.dueIn <= 0 ? "It is due today." : `Due in ${f.dueIn} day(s).`,
+      f.dueIn === 0 ? "It is due today." : f.dueIn < 0 ? `It is ${-f.dueIn} day(s) past due.` : `Due in ${f.dueIn} day(s).`,
     ].filter(Boolean).join(" ");
   } else if (hotspots.length) {
     tone = "warn";
     focus = hotspots[0];
     headline = `${hotspots.length} item(s) need attention; nothing is blocked.`;
+    // Say something the headline does not already say — it carries the count.
+    const worst = attentionScore(hotspots[0], w);
+    detail = `${code(hotspots[0])} is the highest at ${worst.value}: ${worst.reasons.filter((r) => r.warn).slice(0, 2).map((r) => r.label).join("; ") || "no single warning driver"}.`;
   }
 
   const lines: string[] = [];

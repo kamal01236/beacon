@@ -4,10 +4,11 @@
 // posted, a signal accepted or dismissed, a proposed tracker change approved or
 // rejected, a retro action adopted, a feedback vote. Nothing else mutates state:
 // the world each screen renders is the seed + these events (lib/world.ts), and
-// adoption metrics are counts over them (lib/adoption.ts).
+// adoption metrics are counts over them (lib/metrics.ts).
 //
-// Prototype storage is this browser's localStorage — per viewer, never sent
-// anywhere. The live agent replaces it with a server-side store (README → Roadmap).
+// Storage depends on the build: the shared server-side log when /api is there,
+// this browser's localStorage when it isn't (see the mode note below). What is
+// kept, for how long, and how a person's record is erased: lib/policy.ts.
 
 import type { ItemStatus } from "./types";
 
@@ -65,6 +66,10 @@ export type BeaconEvent = Base &
     | { kind: "retro.adopted"; themeId: string; action: string }
     | { kind: "feedback.given"; target: string; helpful: boolean }
     | { kind: "event.undone"; targetId: string }
+    // The two operations that are NOT append-only, each of which records itself
+    // into the log it just shortened so the gap is never unexplained (lib/policy.ts).
+    | { kind: "data.reset"; removed: number; scope: "server" | "browser" }
+    | { kind: "data.retained"; removed: number; olderThanDays: number }
   );
 
 export type EventKind = BeaconEvent["kind"];
@@ -179,10 +184,36 @@ export function undo(targetId: string, actor: string) {
   record({ kind: "event.undone", targetId, actor });
 }
 
-export function clearAll() {
+/** Which store this page load is using — shown on the privacy card. */
+export const storageMode = (): "unknown" | "server" | "local" => mode;
+
+/**
+ * Reset this instance: erase every recorded decision and record that it
+ * happened. In local mode the log is this browser's localStorage and nobody
+ * else is affected; in server mode it is the team's shared log, which is why
+ * this is an operator action rather than a privacy control (lib/policy.ts) —
+ * a person's own data is answered by export and, in phase 4, pseudonymisation.
+ *
+ * Returns how many events were removed. The `data.reset` event is appended
+ * AFTER the wipe, so it survives it: the log is empty but not silent.
+ */
+export async function resetInstance(actor: string): Promise<number> {
+  let removed = (cache ?? []).length;
+  const scope = mode === "server" ? "server" : "browser";
+  if (mode === "server") {
+    try {
+      const res = await fetch("/api/events", { method: "DELETE" });
+      const body = (await res.json()) as { deleted?: number };
+      if (typeof body.deleted === "number") removed = body.deleted; // the server's count is the real one
+    } catch {
+      /* the local view is cleared either way; nothing silently claims success */
+    }
+  } else {
+    saveLocal([]);
+  }
   cache = [];
-  if (mode !== "server") saveLocal([]);
-  notify();
+  record({ kind: "data.reset", removed, scope, actor }); // notifies
+  return removed;
 }
 
 /** Events that still count: drops undo markers and anything they undid. */

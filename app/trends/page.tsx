@@ -1,14 +1,17 @@
 "use client";
 
-import { PERSONA, memberById, updatesBy, itemsOwnedBy, code } from "@/lib/data";
+import { memberById, updatesBy, itemsOwnedBy, code } from "@/lib/data";
 import { factsFor } from "@/lib/facts";
 import { detect } from "@/lib/detect";
 import { todayDay } from "@/lib/demo";
-import { useWorld } from "@/lib/useWorld";
+import { useActor, useWorld } from "@/lib/useWorld";
 
 export default function TrendsPage() {
   const w = useWorld();
-  const me = memberById(PERSONA.member.memberId)!;
+  // Whoever is acting — not a fixed persona, or switching role would still show
+  // Marcus's cadence on a page whose whole promise is "visible only to you".
+  const { memberId } = useActor();
+  const me = memberById(memberId)!;
   const ups = updatesBy(me.id, w).filter((u) => u.progressText);
   const days = new Set(ups.map((u) => u.sprintDay));
   const today = todayDay();

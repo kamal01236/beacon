@@ -1,10 +1,19 @@
 # Beacon — Presenting the Prototype
 
 > **Audience:** hackathon judges / stakeholders · **Length:** about 6 minutes
-> **State:** Sprint 2, Day 8 of 10 (frozen). Start from a clean session:
-> *Agent → Your data → Clear all*, persona **Sarah · Facilitator**, page **Overview**.
-> **Nothing can fail over the network:** the prototype makes no AI or tracker calls —
-> every finding is computed from the predefined data in the browser.
+> **State:** Sprint 2, Day 8 of 10 (frozen). Start from a clean session: as
+> **Sarah · Facilitator**, *Agent → Reset this instance* (*Clear this browser* on the
+> static build), then page **Overview**. The reset leaves one row in the activity log
+> saying it happened — that is deliberate, and §7 uses it.
+>
+> **Pick your build before you present:**
+> - **Static (safest — recommended for the room).** The GitHub Pages deploy or
+>   `BUILD_TARGET=pages npm run build`. There is no backend, so **nothing can fail over
+>   the network**: no AI or tracker calls, every finding computed in the browser. Skip §4b.
+> - **Server (`npm run local`).** Adds the real agent worker and, if a key is set, live
+>   model calls. Everything below still works; §4b becomes available. If the model is
+>   unreachable it silently falls back to the rule detector, so nothing breaks — it just
+>   says which detector ran.
 
 ## Frame it in one breath (20 sec)
 
@@ -58,6 +67,17 @@ switches light and dark, and the one beside it tightens the density.)*
 5. At the top of the item, click **Yes, raise it**: status turns *Blocked* and the score re-ranks.
    > *"The person who wrote it decides. Nobody else was alerted until he answered."*
 
+## 4b. The agent is a real process (40 sec) — Agent · *server build only*
+
+1. **Agent → Agent runs → Run now.** It reports what actually ran: the detector, the
+   model, how many items it scanned, how many model calls it made, and **how often the
+   model disagreed with the rules**.
+   > *"That disagreement count is how we'd judge a model before trusting it — the rules
+   > stay the baseline, and if the model is down every item falls back to them."*
+2. On any proposed comment, click **Draft with agent**: the model re-words the intent
+   Beacon already decided, into the same box you then edit and approve.
+   > *"The model phrases it. It never decides anything, and nothing is sent until approved."*
+
 ## 5. The facilitator decides; everything is logged (60 sec) — switch to Sarah
 
 1. **Agent**: REQ-004 is now *Blocked*, and the **tracker outbox** holds the approved
@@ -76,11 +96,25 @@ switches light and dark, and the one beside it tightens the density.)*
 2. **Root cause**: external dependency and technical gaps, quoted from what people wrote.
 3. **Impact**: every figure says where it comes from: *computed* or *recorded by the team*.
 
-## 7. Privacy by design (20 sec) — switch to Dana · Manager
+## 7. Privacy, and the data policy (45 sec) — switch to Dana · Manager
 
-Read-only banner on the Agent page; **People** isn't in the manager's nav, and a member
-link shows *Member views stay with the team*. Press **Ctrl-K**, type **marcus** — no person
-drill-down is offered either, so the shortcut can't route around the rule.
+1. Read-only banner on the Agent page; **People** isn't in the manager's nav, and a member
+   link shows *Member views stay with the team*. Press **Ctrl-K**, type **marcus** — no person
+   drill-down is offered either, so the shortcut can't route around the rule.
+2. Scroll to **Your data**. It names where the record actually is, how many events it holds,
+   and how many are past the 180-day window. Note what is *not* there: no "delete everything"
+   button, and for Dana no reset at all.
+   > *"The decision log is the audit trail, so it's append-only. A button that lets one person
+   > truncate everybody else's record isn't a privacy feature. Retention is a schedule the
+   > system applies — and it writes down what it removed, so a gap in the log is never
+   > unexplained. An erasure request un-names the person instead of deleting the decision:
+   > the trail survives, the identity doesn't."*
+3. If asked whether anything can be deleted: the only destructive action is **Reset this
+   instance**, it is the facilitator's demo reset rather than a privacy control, and the row
+   at the top of the activity log is the last reset recording itself.
+
+*(The retention sweep is real, not a claim: `npm run data:retain` reports what the policy
+would drop, `data:retain:apply` drops it — worth running once before the room if someone asks.)*
 
 ## Close — the roadmap (20 sec)
 
@@ -93,11 +127,12 @@ drill-down is offered either, so the shortcut can't route around the rule.
 
 | Situation | Do this |
 |---|---|
-| A previous run left decisions behind | *Agent → Your data → Clear all* |
+| A previous run left decisions behind | As Sarah: *Agent → Reset this instance* (facilitator-only, by design) |
 | Wrong persona | Persona menu, top right |
 | Browser storage blocked (private window) | Decisions still work for the page view; mention that the live store is server-side (phase 3) |
 | The room's projector washes the screen out | Click the theme button in the header (light / dark), and the one beside it for density |
-| No network | Use `npm run dev` locally — the whole app runs offline |
+| No network | Use the static build locally (`npm run dev`) — it runs fully offline |
+| A model call is slow or failing | Nothing to do: each item falls back to the rule detector and the panel says which ran. Or present the static build, which makes no calls at all |
 
 ## Pitch one-liner (for Q&A)
 

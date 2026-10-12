@@ -1,17 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { PERSONA, itemsOwnedBy, code } from "@/lib/data";
+import { itemsOwnedBy, code } from "@/lib/data";
 import { byAttention } from "@/lib/priorityScore";
 import { factsFor } from "@/lib/facts";
 import { kbFor, helperFor, proposal } from "@/lib/agent";
-import { useWorld } from "@/lib/useWorld";
+import { useActor, useWorld } from "@/lib/useWorld";
 import { Crumb, AiBlock } from "@/components/ui";
 import { Feedback, ProposalRow } from "@/components/hic";
 
 export default function GetHelpPage() {
   const w = useWorld();
-  const mine = byAttention(itemsOwnedBy(PERSONA.member.memberId, w), w).filter((i) => !factsFor(i, w).done);
+  // Help for the acting person's own work, so the pairing comment this page
+  // proposes is always addressed on behalf of whoever is actually asking.
+  const { memberId } = useActor();
+  const mine = byAttention(itemsOwnedBy(memberId, w), w).filter((i) => !factsFor(i, w).done);
   // the item that most needs help: blocked first, then one whose wording reads as blocked, then the top-ranked
   const item = mine.find((i) => factsFor(i, w).blocked) ?? mine.find((i) => factsFor(i, w).languageNow) ?? mine[0];
 

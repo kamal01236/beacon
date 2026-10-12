@@ -18,7 +18,7 @@ import type { BeaconEvent, Draft } from "../events";
 import type { Item, Update } from "../types";
 import type { KbArticle } from "../agent";
 import { loadJiraBase } from "./jira";
-import { loadEventsFile, appendEventFile, appendRunFile, type RunRow } from "./fileStore";
+import { loadEventsFile, appendEventFile, clearEventsFile, pruneEventsFile, loadRunsFile, appendRunFile, type RunRow } from "./fileStore";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -106,6 +106,62 @@ export async function appendEvent(draft: Draft, actor: string): Promise<BeaconEv
     ev,
   ]);
   return ev;
+}
+
+/**
+ * Erase the whole human-decision log — the server twin of the browser's
+ * resetInstance(). This is the demo-reset operator action, NOT how a person's
+ * own data is erased (lib/policy.ts): the caller appends a `data.reset` event
+ * afterwards so the emptied log still says who emptied it and when. Without
+ * this the browser would clear only its own cache and the events would reappear
+ * on the next page load.
+ */
+export async function clearEvents(): Promise<number> {
+  const before = (await loadEvents()).length;
+  if (!(await usingDb())) {
+    clearEventsFile();
+    return before;
+  }
+  const { db } = await import("./db");
+  await db().query("DELETE FROM events");
+  return before;
+}
+
+/**
+ * The retention sweep: drop every event older than `cutoff` (ISO) and return
+ * how many went. Unlike clearEvents this is the policy running on a schedule
+ * rather than a person deleting a record — see lib/policy.ts.
+ */
+export async function pruneEvents(cutoff: string): Promise<number> {
+  if (!(await usingDb())) return pruneEventsFile(cutoff);
+  const { db } = await import("./db");
+  const { rowCount } = await db().query("DELETE FROM events WHERE at < $1", [cutoff]);
+  return rowCount ?? 0;
+}
+
+/**
+ * The most recent agent-run snapshots, newest first. This is what the Agent
+ * screen shows as "last run" when a backend is present — a real recorded run
+ * rather than a nominal one derived from the frozen demo clock.
+ */
+export async function loadRuns(limit = 5): Promise<RunRow[]> {
+  if (!(await usingDb())) return loadRunsFile().slice(-limit).reverse();
+  const { db } = await import("./db");
+  const { rows } = await db().query<RunRow & { items_scanned: number; signals_open: number }>(
+    `SELECT at, trigger, detector, provider, model, items_scanned, signals_open, summary
+       FROM agent_runs ORDER BY at DESC LIMIT $1`,
+    [limit],
+  );
+  return rows.map((r) => ({
+    at: typeof r.at === "string" ? r.at : new Date(r.at).toISOString(),
+    trigger: r.trigger,
+    detector: r.detector,
+    provider: r.provider,
+    model: r.model,
+    itemsScanned: r.items_scanned,
+    signalsOpen: r.signals_open,
+    summary: r.summary,
+  }));
 }
 
 /** Persist one agent-run snapshot (file or Postgres). */

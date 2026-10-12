@@ -9,7 +9,9 @@ import { code, firstName, memberById, type World } from "@/lib/data";
 import { SIGNAL_LABEL, type AgentRequest, type AgentSignal, type Confidence, type Proposal } from "@/lib/agent";
 import { detect } from "@/lib/detect";
 import { analyze, type Analysis } from "@/lib/analyze";
+import { compose, type Composed } from "@/lib/compose";
 import { DISMISS_REASONS, effective, undo, type BeaconEvent } from "@/lib/events";
+import { SYSTEM_ACTOR } from "@/lib/policy";
 import { outbox } from "@/lib/world";
 import { useActor } from "@/lib/useWorld";
 import type { Item, ItemStatus } from "@/lib/types";
@@ -100,35 +102,84 @@ export function ProposalRow({ p, w, signalId, signalKind }: { p: Proposal; w: Wo
   const [val, setVal] = useState(p.change.to);
   const [editing, setEditing] = useState(false);
   const { analysis, busy, run, reset } = useReanalyze(p.itemId);
+  // "Draft with agent": the model re-words the intent Beacon already decided.
+  const [drafting, setDrafting] = useState(false);
+  const [drafted, setDrafted] = useState<Composed | null>(null);
+
+  // The text that will actually be sent: the person's edit if they changed it, else the agent's draft.
+  const trimmed = val.trim();
+  const isEdited = trimmed !== "" && trimmed !== p.change.to;
+  const outgoing = isEdited ? trimmed : p.change.to;
+
+  // Only a comment is free prose the model can usefully re-word; a status or a
+  // dependency link is a structured change, so drafting it would be meaningless.
+  const draftable = p.change.field === "comment";
+
+  const draft = async () => {
+    setDrafting(true);
+    try {
+      const c = await compose(p.itemId, p.change.label, outgoing);
+      setDrafted(c);
+      // The draft lands in the SAME field the person edits and approves, so
+      // there is still one source of truth for what gets sent.
+      setVal(c.text);
+      setEditing(true);
+      reset();
+    } finally {
+      setDrafting(false);
+    }
+  };
 
   const decide = (decision: "approved" | "rejected") => {
     if (decision === "approved" && signalId && signalKind) {
       const s = lastEvent(w, (e) => e.kind === "signal.decided" && e.signalId === signalId);
       if (!s) act({ kind: "signal.decided", signalId, signalKind, itemId: p.itemId, decision: "accepted" });
     }
-    const edited = editing && val.trim() && val.trim() !== p.change.to;
-    const change = edited ? { ...p.change, to: val.trim(), label: `${p.change.label} (edited)` } : p.change;
+    const edited = decision === "approved" && isEdited;
+    const change = edited ? { ...p.change, to: trimmed, label: `${p.change.label} (edited)` } : p.change;
     act({ kind: "proposal.decided", proposalId: p.id, itemId: p.itemId, decision, change, origin: p.origin });
   };
-  const shown = editing ? val : p.change.to;
+
+  // One field, one source of truth: the preview always reflects `outgoing` — the live
+  // edit while typing, and the final sent text once edited — so what you see is what posts.
+  const shown = editing ? (trimmed || p.change.to) : outgoing;
+  const previewText =
+    p.change.field === "comment" ? `Comment on ${code(p.itemId)}: ${shown}`
+    : p.change.field === "link" ? `${code(p.itemId)} ${shown}`
+    : `${code(p.itemId)}: ${shown}`;
+
   return (
-    <div className="prop">
+    <div className={`prop${editing ? " editing" : ""}`}>
       <div className="pl">
-        {p.change.label}
-        {!editing && <span className="pv">{p.change.field === "comment" ? `Comment on ${code(p.itemId)}: ${shown}` : p.change.field === "link" ? `${code(p.itemId)} ${shown}` : `${code(p.itemId)}: ${shown}`}</span>}
+        <span className="pl-head">
+          {p.change.label}
+          {editing ? <span className="edit-tag">editing</span> : isEdited ? <span className="edit-tag">edited</span> : null}
+        </span>
+        {!editing && <span className="pv">{previewText}</span>}
       </div>
       {p.state === "pending" && canAct && editing && (
-        <div className="field" style={{ marginTop: 6 }}>
-          <textarea className="ta" rows={2} value={val} onChange={(e) => { setVal(e.target.value); reset(); }} aria-label="Edit the proposed text" />
+        <div className="field prop-edit">
+          <label className="fl" htmlFor={`edit-${p.id}`}>Edit the text that will be sent</label>
+          <textarea id={`edit-${p.id}`} className="ta" rows={3} value={val} onChange={(e) => { setVal(e.target.value); reset(); }} aria-label="Edit the proposed text" />
+          <div className="hint">Replaces the agent&apos;s wording. Re-analyze to see how it reads, then Approve to send it to the tracker exactly as written.</div>
+        </div>
+      )}
+      {drafted && (
+        <div className="detectbox" style={{ marginTop: 8 }}>
+          {drafted.source === "llm"
+            ? <>Drafted by {drafted.provider}{drafted.model ? ` (${drafted.model})` : ""} from the intent &ldquo;{p.change.label}&rdquo;. Edit it freely — it is a suggestion, not a decision.</>
+            : <>This is the rule template, unchanged — no model is configured, or the one that is could not be reached. Either way the text stays approvable; set <code>OPENAI_API_KEY</code>, or point <code>BEACON_LLM_PROVIDER</code> at a local Ollama, to have one drafted.</>}
         </div>
       )}
       {analysis && <AnalysisPanel a={analysis} />}
       {p.state === "pending" ? (
         canAct && (
           <div className="btnrow">
-            {editable && !editing && <button className="btn g sm" type="button" onClick={() => setEditing(true)}>Edit</button>}
-            {editing && <button className="btn g sm" type="button" disabled={busy || !val.trim()} onClick={() => run(val, p.change.status)}>{busy ? "Analyzing…" : "Re-analyze"}</button>}
-            <button className="btn p sm" type="button" onClick={() => decide("approved")}>{editing ? "Approve edited" : "Approve"}</button>
+            {editable && !editing && <button className="btn g sm" type="button" onClick={() => setEditing(true)}>{isEdited ? "Edit again" : "Edit"}</button>}
+            {draftable && <button className="btn g sm" type="button" disabled={drafting} onClick={draft}>{drafting ? "Drafting…" : "Draft with agent"}</button>}
+            {editing && <button className="btn g sm" type="button" disabled={busy || !trimmed} onClick={() => run(outgoing, p.change.status)}>{busy ? "Analyzing…" : "Re-analyze"}</button>}
+            {editing && <button className="btn g sm" type="button" onClick={() => setEditing(false)}>Done</button>}
+            <button className="btn p sm" type="button" disabled={!outgoing.trim()} onClick={() => decide("approved")}>{isEdited ? "Approve edited" : "Approve"}</button>
             <button className="btn s sm" type="button" onClick={() => decide("rejected")}>Reject</button>
           </div>
         )
@@ -333,8 +384,16 @@ function describe(e: BeaconEvent): string {
     case "retro.adopted": return `adopted a retro action: ${e.action}`;
     case "feedback.given": return `marked ${e.target} as ${e.helpful ? "helpful" : "not helpful"}`;
     case "event.undone": return "undid an earlier decision";
+    case "data.reset": return `reset this instance — ${e.removed} earlier decision(s) deleted from ${e.scope === "server" ? "the shared server log" : "this browser"}`;
+    case "data.retained": return `applied the retention policy — ${e.removed} decision(s) older than ${e.olderThanDays} days deleted`;
   }
 }
+
+/** Beacon acts as itself for the retention sweep; everything else is a person. */
+const actorName = (id: string) => (id === SYSTEM_ACTOR ? "Beacon" : firstName(id));
+
+/** A deletion cannot be taken back, so the log does not offer undo on one. */
+const reversible = (e: BeaconEvent) => e.kind !== "data.reset" && e.kind !== "data.retained";
 
 export function ActivityLog({ w, all }: { w: World; all: BeaconEvent[] }) {
   const { canAct } = useActor();
@@ -348,12 +407,14 @@ export function ActivityLog({ w, all }: { w: World; all: BeaconEvent[] }) {
         <div key={e.id} className="row">
           <time>{time(e.at)}</time>
           <div className="nm" style={{ fontWeight: 500, textDecoration: !live.has(e.id) && e.kind !== "event.undone" ? "line-through" : undefined }}>
-            <b>{firstName(e.actor)}</b> {describe(e)}
+            <b>{actorName(e.actor)}</b> {describe(e)}
           </div>
-          {canAct && live.has(e.id) && <button className="link" type="button" onClick={() => undo(e.id, e.actor)}>undo</button>}
+          {canAct && live.has(e.id) && reversible(e) && <button className="link" type="button" onClick={() => undo(e.id, e.actor)}>undo</button>}
         </div>
       ))}
-      <div className="drill" style={{ cursor: "default" }}>{w.events.length} decision(s) in effect.</div>
+      {/* The data.* rows record a deletion rather than a decision, so they are
+          not counted as one here even though the log keeps them. */}
+      <div className="drill" style={{ cursor: "default" }}>{w.events.filter(reversible).length} decision(s) in effect.</div>
     </div>
   );
 }

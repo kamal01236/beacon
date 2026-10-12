@@ -533,11 +533,21 @@ details.basis ul{margin:6px 0 0;padding-left:18px;line-height:1.6}
 .conf.fact{background:var(--chip-bg);color:var(--ink-2);border-color:var(--line)}
 .props{margin-top:12px;border-top:1px dashed var(--line-strong);padding-top:10px;display:flex;
   flex-direction:column;gap:8px}
-.prop{display:flex;gap:10px;align-items:flex-start;flex-wrap:wrap}
+.prop{display:flex;gap:10px 12px;align-items:flex-start;flex-wrap:wrap}
 .prop .pl{flex:1;min-width:200px;font-size:var(--t-body);font-weight:600}
+.prop .pl-head{display:inline-flex;gap:8px;align-items:center;flex-wrap:wrap}
+.prop.editing .pl{flex-basis:100%}
+/* In edit mode the textarea, analysis box and buttons each take a full row below the
+   label — never squeezed into the flex row beside it. */
+.prop>.field,.prop>.detectbox,.prop>.btnrow{flex-basis:100%}
 .prop .pv{display:block;margin-top:4px;font-weight:500;font-size:var(--t-meta);color:var(--ink-3);
   background:var(--surface-2);border:1px solid var(--line);border-left:3px solid var(--ai-line);
   border-radius:var(--r-sm);padding:7px 9px;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.5}
+.prop .edit-tag{font-size:var(--t-label);font-weight:800;letter-spacing:.04em;text-transform:uppercase;
+  color:var(--ai);background:var(--chip-bg);border:1px solid var(--ai-line);border-radius:var(--r-pill);padding:1px 8px}
+.prop-edit{margin-top:6px;margin-bottom:0}
+.prop-edit .fl{margin-bottom:5px}
+.prop-edit .hint{margin-top:6px;font-size:var(--t-meta);color:var(--ink-4);line-height:1.5}
 .ok-note{color:var(--ok);font-weight:800;font-size:var(--t-meta)}
 .no-note{color:var(--ink-4);font-weight:800;font-size:var(--t-meta)}
 .detectbox{margin-top:8px;font-size:var(--t-meta);border-radius:var(--r-sm);padding:8px 10px;

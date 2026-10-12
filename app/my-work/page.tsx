@@ -2,16 +2,17 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { PERSONA, memberById, itemsOwnedBy, progressFor, updatesBy, itemById, code, isDone } from "@/lib/data";
+import { memberById, itemsOwnedBy, progressFor, updatesBy, itemById, code, isDone } from "@/lib/data";
 import { attentionScore, byAttention } from "@/lib/priorityScore";
 import { getRequests } from "@/lib/agent";
-import { useWorld } from "@/lib/useWorld";
+import { useActor, useWorld } from "@/lib/useWorld";
 import { TypeTag, StatusPill } from "@/components/ui";
 import { RequestCard, UpdateForm } from "@/components/hic";
 import type { Item } from "@/lib/types";
 
 function MyItem({ it, score }: { it: Item; score: number }) {
   const [open, setOpen] = useState(false);
+  const { canAct } = useActor();
   return (
     <div className="row" style={{ alignItems: "flex-start", flexWrap: "wrap" }}>
       <div className="nm" style={{ minWidth: 220 }}>
@@ -25,7 +26,8 @@ function MyItem({ it, score }: { it: Item; score: number }) {
       {!open && !isDone(it) && (
         <div className="btnrow">
           {it.status === "blocked" && <Link className="btn s sm" href="/get-help">Get help</Link>}
-          <button className="btn p sm" type="button" onClick={() => setOpen(true)}>Update</button>
+          {/* Read-only roles get no Update button — the form itself refuses too. */}
+          {canAct && <button className="btn p sm" type="button" onClick={() => setOpen(true)}>Update</button>}
         </div>
       )}
     </div>
@@ -34,7 +36,10 @@ function MyItem({ it, score }: { it: Item; score: number }) {
 
 export default function MyWorkPage() {
   const w = useWorld();
-  const me = memberById(PERSONA.member.memberId)!;
+  // "My work" means the acting person's work. Reading a fixed persona here meant
+  // a facilitator who opened this page saw Marcus's items and posted as herself.
+  const { memberId } = useActor();
+  const me = memberById(memberId)!;
   const owned = byAttention(itemsOwnedBy(me.id, w), w);
   const ups = updatesBy(me.id, w);
   const blocked = owned.filter((i) => i.status === "blocked");

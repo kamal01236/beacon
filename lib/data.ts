@@ -105,11 +105,6 @@ export function updatesBy(memberId: string, w: World = SEED): Update[] {
     .sort((a, b) => b.sprintDay - a.sprintDay);
 }
 
-/** The most recent update authored by a member in the active sprint. */
-export function latestUpdateBy(memberId: string, w: World = SEED): Update | undefined {
-  return updatesBy(memberId, w)[0];
-}
-
 export function kudosFor(memberId: string) {
   return {
     received: kudos.filter((k) => k.to === memberId),

@@ -54,6 +54,13 @@ function receipt(e: BeaconEvent): { title: string; message?: string; tone?: "ok"
       return { title: `Marked ${e.target} ${e.helpful ? "helpful" : "not helpful"}`, message: "Counted in adoption, per team — never per person." };
     case "event.undone":
       return null; // undoing already shows itself on screen
+    case "data.reset":
+    case "data.retained":
+      // Neither comes through act(): the reset confirms itself from the card
+      // that triggered it (components/privacy.tsx) and the retention sweep runs
+      // on the server. Both would be wrong to toast with undo attached anyway —
+      // a deletion has no way back, which is why the activity log omits it too.
+      return null;
   }
 }
 

@@ -18,19 +18,42 @@ This README is the single source of truth for what is built and what comes next
   the roll-up, root causes and retro themes are all *computed* from the data. People
   post updates, answer the agent, accept or dismiss findings, approve tracker changes
   and undo them — and every screen updates.
-- **Decisions are stored in the browser** (localStorage) in the prototype. Each
-  viewer has their own session; *Agent → Your data → Clear all* resets it.
+- **Decisions are stored in whichever backend is running.** With the server build
+  (`npm run local`) they go to the shared server-side event log — Postgres if
+  `DATABASE_URL` is set, otherwise `.data/` — so the team sees one record and the
+  agent can read it. With the static export there is no backend, so they stay in
+  that browser's localStorage. *Agent → Your data* states which is live, what is
+  kept and for how long; emptying the shared log is a separate, facilitator-only
+  **reset** that records itself in the log it emptied (`lib/policy.ts`).
 
 ## Run
 
+Node 18+. Runs as-is on **WSL**. There are two ways to run it, and they differ only
+in whether the backend is there.
+
 ```bash
 npm install
-npm run dev        # http://localhost:3000
-npm run build      # production build
+
+# UI only — no /api, decisions in this browser. Fine for the screens.
+npm run dev            # http://localhost:3000
+
+# The whole stack: build + server (with /api) + the agent worker, on a free port.
+npm run local          # Postgres if DATABASE_URL is set, else .data/
+npm run local:nodb     # force the no-database path
+
+npm run build          # production build (BUILD_TARGET=pages for the static export)
 ```
 
-Node 18+. Runs as-is on **WSL**. Regenerate the dataset (idempotent, keeps the
-hand-written demo items): `node scripts/generate-seed.mjs`.
+On Windows, use `npm run local` rather than `npm run dev` when you need `/api`: the
+dev server's incremental compile has been seen to corrupt the webpack runtime for the
+route handlers, while the production build it runs does not.
+
+Other scripts: `npm run agent` / `agent:once` (the worker alone, against a running
+server), `npm run data:retain` (dry run: what the retention policy would drop) and
+`data:retain:apply`, `npm run db:seed` / `db:reset` (load `data/*.json` into Postgres),
+`npm run check:secrets` (refuses to commit a key). Regenerate the dataset
+(idempotent, keeps the hand-written demo items): `node scripts/generate-seed.mjs`.
+Full backend setup, including the WSL walkthrough: [BACKEND-PLAN.md](BACKEND-PLAN.md) §7.
 
 ## Deploy
 
@@ -92,11 +115,27 @@ has decided 3+ signals of that type, the score blends in the observed accept rat
 The world every screen renders is *seed + events*: only a person's own update or an
 **approved** proposal changes an item.
 
-### 6. Privacy by design
+### 6. Privacy and the data policy (`lib/policy.ts`)
 Reads work-item updates only (never chat, mail or calendars) · author-first prompts ·
 no individual scoring or leaderboard · adoption counted per team and per signal type,
-never per person · member drill-downs and personal trends are hidden from the manager
-role · *Your data* panel to export or delete everything stored.
+never per person · member drill-downs and personal trends are hidden from the manager role.
+
+The decision log is **append-only** — it is the audit trail behind "every decision is
+reversible and visible". So there is deliberately *no* "delete everything" button over a
+shared log: one person could not be allowed to truncate everybody else's record. The four
+things a data policy has to answer are answered separately, and the policy is stated once
+in code so the UI copy, the endpoint and these docs cannot drift:
+
+| Concern | How | Built |
+|---|---|---|
+| **Retention** | Events age out after `DECISION_RETENTION_DAYS` (180). Applied on a schedule — `POST /api/data/retention`, clocked by `npm run data:retain` — and the removal appends a `data.retained` event, so a gap in the log is never unexplained | **Yes** |
+| **Access** | *Export my data* is scoped to the events the viewer is the subject of; exporting the whole team log is a separate facilitator action | **Yes** |
+| **Erasure** | An erasure request **pseudonymises the actor** rather than deleting the decision: the audit trail survives, the identity does not. Needs sign-in to know who is asking | Phase 4 — stated, not claimed |
+| **Preferences** | Theme, density and the rail never leave the viewer's browser and are never part of the team record | **Yes** |
+
+Emptying the log is the one remaining destructive action, and it is framed as what it is:
+a **demo-instance reset**, facilitator-only, confirmed, never offered an undo, and appended
+to the log it just emptied.
 
 ### 7. Adoption (`Insights → Adoption`)
 Signals raised / accepted / dismissed, accept rate per signal type (below 60% flags a
@@ -123,7 +162,7 @@ never define their own colours or shell, so a change lands everywhere at once.
 
 Theme, density and the rail are per-viewer conveniences in this browser
 (`lib/prefs.ts`). They never reach the event log, never change a finding, and
-are included in *Your data* export and delete.
+travel with *Export my data*.
 
 ## Code map
 
@@ -131,15 +170,32 @@ are included in *Your data* export and delete.
 app/            one folder per screen; all render inside components/AppShell.tsx
   overview/ agent/ board/ item/[id]/ delivery/ people/ people/[memberId]/
   insights/ retro/ inbox/ manager/ my-work/ get-help/ trends/
+  api/          server build only; hidden from the static export
+    base/ world/ events/        the snapshot, the folded world, the decision log
+                                (events also answers DELETE — the instance reset)
+    agent/run/                  POST triggers a run · GET lists recorded runs
+    agent/analyze/ compose/     re-read an edited draft · draft one comment
+    data/retention/             GET what the policy would drop · POST apply it
+    jira/search/                the faked Jira REST payload Beacon ingests
 components/     AppShell, Nav, PersonaSwitcher, RoleProvider, ui, charts,
-                hic (human-in-control controls), privacy,
+                hic (human-in-control controls), privacy, AgentRun ("Run now"),
                 CommandPalette, Toaster, ThemeControls
 lib/            data (seed + World), demo (frozen clock), facts, priorityScore,
                 detect, agent, insights (brief, roll-up, root cause, retro, adoption),
                 metrics (charts), events (decision log), world (seed + events),
-                useWorld (React hooks), prefs (theme/density), toast, nav, types
+                useWorld (React hooks), prefs (theme/density), toast, nav, types,
+                config (env → AgentConfig), policy (retention / access / erasure,
+                stated once), analyze + compose (client API helpers)
+  lib/server/   SERVER ONLY: store (Postgres or .data/), db, fileStore, jira, agent
+                (the run: LLM → detection override → the same brain)
+  lib/llm/      one LlmProvider seam, two implementations (openai, ollama),
+                prompt, normalize (recomputes score from weights — never trusts
+                the model's own arithmetic), types
+agent/          run.mjs — the worker: just the clock, calls POST /api/agent/run
+db/             schema.sql (items, updates, events, agent_runs, knowledge_base)
 data/           seed JSON + kb.json
-scripts/        generate-seed.mjs
+scripts/        build (two targets), local (one-command stack), seed-db,
+                retain (the retention sweep's clock), check-secrets, generate-seed
 ```
 
 **Roles** (switch from the persona menu): **Facilitator** (Sarah) — Overview · Agent ·
@@ -152,9 +208,9 @@ My trends.
 | Phase | Scope | Status |
 |---|---|---|
 | **1. Honest engine** | Computed score (14 rules), computed + calibrated confidence, language detector, computed brief / roll-up / root cause / retro / impact; seed reduced to raw facts | **Done** |
-| **2. Human in control, end to end** | Decision log; accept / dismiss / snooze; previewed + approved changes and outbox; author-first prompts; member updates; undo (in the log and on every confirmation toast); read-only manager; adoption metrics; privacy panel; light/dark, density, command palette and a keyboard + screen-reader baseline | **Done** (browser store) |
-| **3. Live agent on WSL** | Server-side store (SQLite → Postgres) replaces localStorage so the team shares one record; run / answer API; real clock + scheduler; daily snapshots → real burndown, cumulative flow, cycle time; LLM detection behind the same `Detection` shape, judged against the accept/dismiss record; extraction from newly pasted meeting notes; team-tunable rule weights | Next |
-| **4. Pilot with one team** | Jira / ADO read sync and approved write-back (AGENT-ARCHITECTURE.md §10); SSO + roles enforced on the server; Teams / Slack bot for questions and updates; a measured first-week baseline; consent statement and retention policy | Planned |
+| **2. Human in control, end to end** | Decision log; accept / dismiss / snooze; previewed + approved changes and outbox; author-first prompts; member updates; undo (in the log and on every confirmation toast); read-only manager; adoption metrics; privacy panel; light/dark, density, command palette and a keyboard + screen-reader baseline | **Done** |
+| **3. Live agent on WSL** | Server-side store (Postgres, or `.data/` with no database) replaces localStorage so the team shares one record; `/api` for the world, the event log and agent runs; the worker as a real clock with cadence and quiet hours; LLM detection behind the same `Detection` shape with a guaranteed fallback to the rules; agent-drafted comments behind the same approval gate; a stated data policy with a working retention sweep | **Done (core)** — see [BACKEND-PLAN.md](BACKEND-PLAN.md) §8. Remaining: daily snapshots for real burndown / cycle time, KB semantic match, extraction from newly pasted notes, team-tunable weights |
+| **4. Pilot with one team** | Jira / ADO read sync and approved write-back (AGENT-ARCHITECTURE.md §10); SSO + roles enforced on the server, which is also what makes **erasure by pseudonymisation** answerable (`lib/policy.ts`); Teams / Slack bot for questions and updates; a measured first-week baseline; consent statement | Planned |
 | **5. Enterprise** | Many teams, programme roll-up and cross-team dependencies; audit export; data residency; admin configuration; full WCAG 2.2 AA audit on top of the phase-2 baseline; tenant theming from the token layer | Planned |
 
 Presenting the prototype: [DEMO-SCRIPT.md](DEMO-SCRIPT.md). Pitch and requirement

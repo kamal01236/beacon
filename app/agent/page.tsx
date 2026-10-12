@@ -6,7 +6,8 @@ import { getRun, getSignals, getRequests, detections, SIGNAL_LABEL, type SignalK
 import { code, firstName, itemById } from "@/lib/data";
 import { useAllEvents, useWorld } from "@/lib/useWorld";
 import { ActivityLog, Outbox, ReadOnlyNote, RequestCard, SignalCard } from "@/components/hic";
-import { PrivacyCard } from "@/components/privacy";
+import { DataResetCard, PrivacyCard } from "@/components/privacy";
+import { AgentRunPanel } from "@/components/AgentRun";
 
 export default function AgentPage() {
   const w = useWorld();
@@ -45,6 +46,8 @@ export default function AgentPage() {
           <span className="chip">memory: {run.memory}</span>
         </div>
       </div>
+
+      <AgentRunPanel />
 
       <div className="cols" style={{ marginTop: 16 }}>
         <div className="col">
@@ -94,6 +97,7 @@ export default function AgentPage() {
           <Outbox w={w} />
           <ActivityLog w={w} all={all} />
           <PrivacyCard all={all} />
+          <DataResetCard all={all} />
         </div>
       </div>
     </>

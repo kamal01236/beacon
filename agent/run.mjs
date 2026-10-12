@@ -55,7 +55,16 @@ async function runOnce(trigger = "schedule") {
   }
 }
 
-await runOnce("schedule");
+// `--once` is the cron/CI mode: the caller chose the moment, so it always runs.
+// The worker's own startup run respects quiet hours like every scheduled run —
+// otherwise restarting the worker at 03:00 would fire the run the window exists
+// to prevent.
+if (once || !inQuietHours()) {
+  await runOnce("schedule");
+} else {
+  console.log(`quiet hours ${QUIET}: skipping the startup run`);
+}
+
 if (!once) {
   console.log(`agent worker: every ${INTERVAL_MIN} min, target ${BASE}${QUIET ? `, quiet ${QUIET}` : ""}`);
   setInterval(() => {

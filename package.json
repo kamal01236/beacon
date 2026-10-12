@@ -14,7 +14,9 @@
     "db:seed": "node scripts/seed-db.mjs",
     "db:reset": "node scripts/seed-db.mjs --reset",
     "agent": "node agent/run.mjs",
-    "agent:once": "node agent/run.mjs --once"
+    "agent:once": "node agent/run.mjs --once",
+    "data:retain": "node scripts/retain.mjs",
+    "data:retain:apply": "node scripts/retain.mjs --apply"
   },
   "dependencies": {
     "dotenv": "^16.4.7",
