@@ -5,17 +5,27 @@
   "description": "Beacon — an AI companion layer over Jira/Azure DevOps for agile delivery teams.",
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "node scripts/build.mjs",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "local": "node scripts/local.mjs",
+    "local:nodb": "node scripts/local.mjs --no-db",
+    "check:secrets": "node scripts/check-secrets.mjs",
+    "db:seed": "node scripts/seed-db.mjs",
+    "db:reset": "node scripts/seed-db.mjs --reset",
+    "agent": "node agent/run.mjs",
+    "agent:once": "node agent/run.mjs --once"
   },
   "dependencies": {
+    "dotenv": "^16.4.7",
     "next": "^14.2.35",
+    "pg": "^8.13.1",
     "react": "18.3.1",
     "react-dom": "18.3.1"
   },
   "devDependencies": {
     "@types/node": "20.14.10",
+    "@types/pg": "^8.11.10",
     "@types/react": "18.3.3",
     "@types/react-dom": "18.3.0",
     "typescript": "5.5.3"

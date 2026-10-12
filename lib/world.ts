@@ -24,12 +24,21 @@ function applyStatus(it: Item, status: Item["status"], blocker?: string | null) 
 }
 
 export function buildWorld(all: BeaconEvent[]): World {
-  const events = effective(all);
-  if (events.length === 0) return SEED;
+  if (effective(all).length === 0) return SEED;
+  return buildWorldFrom(SEED.items, SEED.updates, all);
+}
 
-  const items = SEED.items.map((i) => ({ ...i }));
+/**
+ * The same reducer as `buildWorld`, but over an explicit base snapshot instead
+ * of the bundled SEED — this is how the server builds the world from the tracker
+ * items + updates it imported into the database, plus the recorded events. The
+ * client keeps calling `buildWorld`; the API calls this.
+ */
+export function buildWorldFrom(baseItems: Item[], baseUpdates: World["updates"], all: BeaconEvent[]): World {
+  const events = effective(all);
+  const items = baseItems.map((i) => ({ ...i }));
   const byId = new Map(items.map((i) => [i.id, i]));
-  const updates = [...SEED.updates];
+  const updates = [...baseUpdates];
   const day = todayDay();
 
   for (const e of events) {

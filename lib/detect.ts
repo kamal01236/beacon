@@ -41,8 +41,27 @@ const RELIEF: [RegExp, string, number][] = [
   [/identified the (problem|issue|cause)|working on the fix|\bfixed\b|\bresolved\b|\bunblocked\b/i, "fix in hand", -2],
 ];
 
+// Detection override seam.
+//
+// The whole brain (facts → score → signals) calls `detect(text)` synchronously.
+// The LLM detector is async and runs server-side in the agent worker, so it
+// cannot be called from inside `detect`. Instead the worker pre-computes model
+// detections for the update texts it cares about, installs them here as a
+// text → Detection map, then runs the synchronous pipeline — which transparently
+// picks up the model's verdict for any text in the map and the regex rules for
+// everything else. The default (no override) is pure rule-based behaviour, so
+// the client bundle and the static export are completely unaffected.
+let overrides: Map<string, Detection> | null = null;
+export function setDetectionOverrides(map: Map<string, Detection> | null): void {
+  overrides = map;
+}
+
 export function detect(text: string | null | undefined): Detection {
   const t = text ?? "";
+  if (overrides) {
+    const o = overrides.get(t);
+    if (o) return o;
+  }
   const hits: Hit[] = [];
   const relief: Hit[] = [];
   for (const [re, phrase, weight] of DISTRESS) if (re.test(t)) hits.push({ phrase, weight });

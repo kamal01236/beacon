@@ -73,38 +73,70 @@ export type NewEvent = BeaconEvent extends infer E ? (E extends BeaconEvent ? Om
 /** An event as a screen proposes it; the acting person is filled in by useActor(). */
 export type Draft = BeaconEvent extends infer E ? (E extends BeaconEvent ? Omit<E, "id" | "at" | "actor"> : never) : never;
 
+// Storage has two modes, resolved once per page load:
+//   • server — the /api backend is reachable (the Next server build). The base
+//     snapshot (items + updates, from the faked Jira) and the event log are
+//     fetched from the server, and every recorded decision is POSTed back, so
+//     state is shared across sessions and read by the agent.
+//   • local  — no /api (the static GitHub Pages export). Events live in this
+//     browser's localStorage, exactly as before, over the bundled seed base.
+// SSR and the first client paint always render the seed with no events, then
+// hydrate() swaps in the real source — so there is no hydration mismatch.
+
+import { items as seedItems, updates as seedUpdates } from "./data";
+import type { Item, Update } from "./types";
+
 const KEY = "beacon.events.v1";
 const EMPTY: BeaconEvent[] = [];
-let cache: BeaconEvent[] | null = null;
-const listeners = new Set<() => void>();
+const SEED_BASE: { items: Item[]; updates: Update[] } = { items: seedItems, updates: seedUpdates };
 
-function load(): BeaconEvent[] {
-  if (cache) return cache;
+let cache: BeaconEvent[] | null = null;
+let clientBase: { items: Item[]; updates: Update[] } | null = null;
+let mode: "unknown" | "server" | "local" = "unknown";
+let hydrated = false;
+const listeners = new Set<() => void>();
+const notify = () => listeners.forEach((l) => l());
+
+function loadLocal(): BeaconEvent[] {
   try {
     const raw = typeof window !== "undefined" ? window.localStorage.getItem(KEY) : null;
-    cache = raw ? (JSON.parse(raw) as BeaconEvent[]) : [];
+    return raw ? (JSON.parse(raw) as BeaconEvent[]) : [];
   } catch {
-    cache = [];
+    return [];
   }
-  return cache;
 }
-
-function save(next: BeaconEvent[]) {
-  cache = next;
+function saveLocal(next: BeaconEvent[]) {
   try {
     window.localStorage.setItem(KEY, JSON.stringify(next));
   } catch {
     /* storage blocked: events live for this page view only */
   }
-  listeners.forEach((l) => l());
+}
+
+/** Decide the storage mode and load the initial state. Runs once, on the client. */
+async function hydrate() {
+  if (hydrated || typeof window === "undefined") return;
+  hydrated = true;
+  try {
+    const [baseRes, evRes] = await Promise.all([fetch("/api/base"), fetch("/api/events")]);
+    if (!baseRes.ok || !evRes.ok) throw new Error("no api");
+    clientBase = (await baseRes.json()) as { items: Item[]; updates: Update[] };
+    cache = (await evRes.json()) as BeaconEvent[];
+    mode = "server";
+  } catch {
+    mode = "local";
+    cache = loadLocal();
+  }
+  notify();
 }
 
 export function subscribe(fn: () => void): () => void {
   listeners.add(fn);
+  void hydrate();
   const onStorage = (e: StorageEvent) => {
-    if (e.key === KEY) {
-      cache = null;
-      fn();
+    if (mode === "local" && e.key === KEY) {
+      cache = loadLocal();
+      notify();
     }
   };
   if (typeof window !== "undefined") window.addEventListener("storage", onStorage);
@@ -114,13 +146,32 @@ export function subscribe(fn: () => void): () => void {
   };
 }
 
-export const getEvents = (): BeaconEvent[] => load();
+export const getEvents = (): BeaconEvent[] => cache ?? EMPTY;
 export const getServerEvents = (): BeaconEvent[] => EMPTY;
+/** The item/update base the world folds over: the server snapshot, else the seed. */
+export const getBase = (): { items: Item[]; updates: Update[] } => clientBase ?? SEED_BASE;
+export const getServerBase = (): { items: Item[]; updates: Update[] } => SEED_BASE;
 
 let seq = 0;
 export function record(e: NewEvent): BeaconEvent {
   const ev = { ...e, id: `ev-${Date.now().toString(36)}-${(seq++).toString(36)}`, at: new Date().toISOString() } as BeaconEvent;
-  save([...load(), ev]);
+  cache = [...(cache ?? []), ev];
+  if (mode === "server") {
+    const draft = { ...ev } as Record<string, unknown>;
+    delete draft.id;
+    delete draft.at;
+    delete draft.actor;
+    void fetch("/api/events", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ draft, actor: ev.actor }),
+    }).catch(() => {
+      /* optimistic: the event is already shown; a failed POST just isn't persisted */
+    });
+  } else {
+    saveLocal(cache);
+  }
+  notify();
   return ev;
 }
 
@@ -129,7 +180,9 @@ export function undo(targetId: string, actor: string) {
 }
 
 export function clearAll() {
-  save([]);
+  cache = [];
+  if (mode !== "server") saveLocal([]);
+  notify();
 }
 
 /** Events that still count: drops undo markers and anything they undid. */

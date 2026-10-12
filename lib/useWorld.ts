@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo, useSyncExternalStore } from "react";
-import { subscribe, getEvents, getServerEvents, record, type BeaconEvent, type Draft, type NewEvent } from "./events";
-import { buildWorld } from "./world";
+import { subscribe, getEvents, getServerEvents, getBase, getServerBase, record, type BeaconEvent, type Draft, type NewEvent } from "./events";
+import { buildWorldFrom } from "./world";
 import { PERSONA, code, type World } from "./data";
 import { SIGNAL_LABEL } from "./agent";
 import { push } from "./toast";
@@ -11,7 +11,8 @@ import { useRole } from "@/components/RoleProvider";
 /** The seed + this session's recorded decisions. Server render and first paint use the plain seed. */
 export function useWorld(): World {
   const events = useSyncExternalStore(subscribe, getEvents, getServerEvents);
-  return useMemo(() => buildWorld(events), [events]);
+  const base = useSyncExternalStore(subscribe, getBase, getServerBase);
+  return useMemo(() => buildWorldFrom(base.items, base.updates, events), [base, events]);
 }
 
 /** Every recorded event, including undone ones — for the activity log. */

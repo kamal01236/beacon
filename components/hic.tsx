@@ -8,6 +8,7 @@ import { useState } from "react";
 import { code, firstName, memberById, type World } from "@/lib/data";
 import { SIGNAL_LABEL, type AgentRequest, type AgentSignal, type Confidence, type Proposal } from "@/lib/agent";
 import { detect } from "@/lib/detect";
+import { analyze, type Analysis } from "@/lib/analyze";
 import { DISMISS_REASONS, effective, undo, type BeaconEvent } from "@/lib/events";
 import { outbox } from "@/lib/world";
 import { useActor } from "@/lib/useWorld";
@@ -51,28 +52,83 @@ export function ConfidenceBasis({ c }: { c: Confidence }) {
   );
 }
 
+// ---- re-analyze (edit the agent's reading, then re-check) ------------------
+
+/** Shared state for a "Re-analyze with agent" control: run it, hold the result. */
+export function useReanalyze(itemId: string) {
+  const [analysis, setAnalysis] = useState<Analysis | null>(null);
+  const [busy, setBusy] = useState(false);
+  const run = async (text: string, status?: ItemStatus) => {
+    if (!text.trim()) return;
+    setBusy(true);
+    try {
+      setAnalysis(await analyze(itemId, text.trim(), status));
+    } finally {
+      setBusy(false);
+    }
+  };
+  return { analysis, busy, run, reset: () => setAnalysis(null) };
+}
+
+/** The agent's plain-language verdict on an edited draft — shown before submit. */
+export function AnalysisPanel({ a }: { a: Analysis }) {
+  const phrases = [...a.hits, ...a.relief];
+  return (
+    <div className={`detectbox${a.signal ? " hot" : ""}`} style={{ marginTop: 8 }}>
+      <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 4 }}>
+        <span className={`pill ${a.signal ? "r" : "n"}`}>{a.verdict === "blocked" ? "reads as blocked" : "not blocked"}</span>
+        <span style={{ color: "var(--ink-4)" }}>
+          score {a.score} / threshold {a.threshold} ·{" "}
+          {a.source === "agent" ? `${a.provider ?? "agent"}${a.model ? ` (${a.model})` : ""}` : "local rules (no backend)"}
+        </span>
+      </div>
+      <div>{a.answer}</div>
+      {phrases.length > 0 && (
+        <div style={{ color: "var(--ink-4)", marginTop: 4 }}>{phrases.map((h) => `${h.phrase} ${h.weight > 0 ? "+" : ""}${h.weight}`).join(", ")}</div>
+      )}
+    </div>
+  );
+}
+
 // ---- proposals (tracker changes) -------------------------------------------
 
 export function ProposalRow({ p, w, signalId, signalKind }: { p: Proposal; w: World; signalId?: string; signalKind?: string }) {
   const { act, canAct } = useActor();
   const ev = lastEvent(w, (e) => e.kind === "proposal.decided" && e.proposalId === p.id);
+  // The agent-drafted text fields a person may edit before approving.
+  const editable = p.change.field === "comment" || p.change.field === "blocker" || p.change.field === "create";
+  const [val, setVal] = useState(p.change.to);
+  const [editing, setEditing] = useState(false);
+  const { analysis, busy, run, reset } = useReanalyze(p.itemId);
+
   const decide = (decision: "approved" | "rejected") => {
     if (decision === "approved" && signalId && signalKind) {
       const s = lastEvent(w, (e) => e.kind === "signal.decided" && e.signalId === signalId);
       if (!s) act({ kind: "signal.decided", signalId, signalKind, itemId: p.itemId, decision: "accepted" });
     }
-    act({ kind: "proposal.decided", proposalId: p.id, itemId: p.itemId, decision, change: p.change, origin: p.origin });
+    const edited = editing && val.trim() && val.trim() !== p.change.to;
+    const change = edited ? { ...p.change, to: val.trim(), label: `${p.change.label} (edited)` } : p.change;
+    act({ kind: "proposal.decided", proposalId: p.id, itemId: p.itemId, decision, change, origin: p.origin });
   };
+  const shown = editing ? val : p.change.to;
   return (
     <div className="prop">
       <div className="pl">
         {p.change.label}
-        <span className="pv">{p.change.field === "comment" ? `Comment on ${code(p.itemId)}: ${p.change.to}` : p.change.field === "link" ? `${code(p.itemId)} ${p.change.to}` : `${code(p.itemId)}: ${p.change.to}`}</span>
+        {!editing && <span className="pv">{p.change.field === "comment" ? `Comment on ${code(p.itemId)}: ${shown}` : p.change.field === "link" ? `${code(p.itemId)} ${shown}` : `${code(p.itemId)}: ${shown}`}</span>}
       </div>
+      {p.state === "pending" && canAct && editing && (
+        <div className="field" style={{ marginTop: 6 }}>
+          <textarea className="ta" rows={2} value={val} onChange={(e) => { setVal(e.target.value); reset(); }} aria-label="Edit the proposed text" />
+        </div>
+      )}
+      {analysis && <AnalysisPanel a={analysis} />}
       {p.state === "pending" ? (
         canAct && (
           <div className="btnrow">
-            <button className="btn p sm" type="button" onClick={() => decide("approved")}>Approve</button>
+            {editable && !editing && <button className="btn g sm" type="button" onClick={() => setEditing(true)}>Edit</button>}
+            {editing && <button className="btn g sm" type="button" disabled={busy || !val.trim()} onClick={() => run(val, p.change.status)}>{busy ? "Analyzing…" : "Re-analyze"}</button>}
+            <button className="btn p sm" type="button" onClick={() => decide("approved")}>{editing ? "Approve edited" : "Approve"}</button>
             <button className="btn s sm" type="button" onClick={() => decide("rejected")}>Reject</button>
           </div>
         )
@@ -162,13 +218,15 @@ export function UpdateForm({ item, requestId, onDone }: { item: Item; requestId?
   const [text, setText] = useState("");
   const [next, setNext] = useState("");
   const [blocker, setBlocker] = useState("");
+  const { analysis, busy, run, reset } = useReanalyze(item.id);
   if (!canAct) return null;
   const d = detect(`${text} ${blocker}`);
+  const draftText = `${text} ${status === "blocked" ? blocker : ""}`.trim();
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!text.trim()) return;
     act({ kind: "update.posted", itemId: item.id, status, text: text.trim(), next: next.trim() || null, blocker: status === "blocked" ? blocker.trim() || null : null, requestId });
-    setText(""); setNext(""); setBlocker("");
+    setText(""); setNext(""); setBlocker(""); reset();
     onDone?.();
   };
   return (
@@ -204,7 +262,11 @@ export function UpdateForm({ item, requestId, onDone }: { item: Item; requestId?
         <div className="fl">Next step (optional)</div>
         <input className="inp" value={next} onChange={(e) => setNext(e.target.value)} />
       </div>
+      {analysis && <AnalysisPanel a={analysis} />}
       <div className="btnrow">
+        <button className="btn g sm" type="button" disabled={!text.trim() || busy} onClick={() => run(draftText, status)}>
+          {busy ? "Analyzing…" : "Re-analyze with agent"}
+        </button>
         <button className="btn p sm" type="submit" disabled={!text.trim()}>Post update</button>
         {onDone && <button className="btn g sm" type="button" onClick={onDone}>Cancel</button>}
       </div>
