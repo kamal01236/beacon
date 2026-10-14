@@ -94,9 +94,15 @@ export function ItemDetail({ id }: { id: string }) {
           {signals.map((s) => <SignalCard key={s.id} s={s} w={w} />)}
 
           <div className="card">
-            <div className="ct">Activity timeline <span className="mut">each update is language-checked</span></div>
-            {ups.length === 0 && <div className="sub" style={{ marginTop: 6 }}>No updates recorded yet.</div>}
-            {ups.map((u) => {
+            <div className="ct">Activity timeline <span className="mut">newest first · each update is language-checked</span></div>
+            {isOwner && !f.done && (
+              <UpdateForm item={item} seed={{ status: item.status, note: summary }} />
+            )}
+            {!isOwner && canAct && !f.done && (
+              <div className="sub" style={{ marginTop: 10 }}>Only the owner ({firstName(item.owner)}) posts updates here.</div>
+            )}
+            {ups.length === 0 && <div className="sub" style={{ marginTop: 12 }}>No updates recorded yet.</div>}
+            {[...ups].reverse().map((u) => {
               const author = memberById(u.author);
               const missing = !u.author || !u.progressText;
               const d = detect([u.progressText, u.blockerText].filter(Boolean).join(" "));
@@ -120,15 +126,6 @@ export function ItemDetail({ id }: { id: string }) {
                 </div>
               );
             })}
-            {isOwner && !f.done && (
-              <>
-                <div className="fl" style={{ marginTop: 14 }}>Post today&apos;s update</div>
-                <UpdateForm item={item} />
-              </>
-            )}
-            {!isOwner && canAct && !f.done && (
-              <div className="sub" style={{ marginTop: 10 }}>Only the owner ({firstName(item.owner)}) posts updates here.</div>
-            )}
           </div>
         </div>
 

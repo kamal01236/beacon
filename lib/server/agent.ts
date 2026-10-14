@@ -23,7 +23,7 @@ import { getSignals, getRequests, getRun } from "../agent";
 import { daysFromToday } from "../demo";
 import { loadWorld, recordRun } from "./store";
 import { loadConfig, type AgentConfig } from "../config";
-import { getProvider, llmDetect, llmCompose, type DetectInput, type ComposeInput } from "../llm";
+import { getProvider, llmDetect, llmCompose, type DetectInput, type ComposeInput, type SummarizeInput } from "../llm";
 import type { AgentSignal } from "../agent";
 import type { World } from "../data";
 import type { Item, ItemStatus } from "../types";
@@ -311,4 +311,90 @@ export async function composeComment(
     provider: fromModel ? provider.name : null,
     model: fromModel ? provider.model : null,
   };
+}
+
+// ---- single-field update composer (clean up / summarize) -------------------
+//
+// Powers the one input field an assignee uses to post a stand-up update. The
+// person writes or dictates one note; the model either cleans it up ("cleanup")
+// or folds it together with the agent's seed and the recent thread into one
+// coherent update plus a proposed status and any clarifying questions
+// ("summarize"). Writes nothing — a person confirms and posts. If no model is
+// configured or it errors, a deterministic rule cleanup runs instead, so the
+// field never dead-ends and the copy says which produced the result.
+
+/** The statuses the composer may post — mirrors STATUS_OPTIONS in the UI. */
+const POST_STATUSES: ItemStatus[] = ["in_progress", "blocked", "done", "monitoring", "todo"];
+
+export interface SummarizeUpdateResult {
+  text: string;
+  proposedStatus: ItemStatus | null;
+  questions: string[];
+  source: "llm" | "rules";
+  provider: string | null;
+  model: string | null;
+}
+
+/** Deterministic fallback: light, meaning-preserving cleanup. Never invents. */
+function ruleCleanup(raw: string): string {
+  const t = raw.replace(/\s+/g, " ").trim();
+  if (!t) return "";
+  const cased = t.charAt(0).toUpperCase() + t.slice(1);
+  return /[.!?]$/.test(cased) ? cased : `${cased}.`;
+}
+
+export async function summarizeUpdate(
+  itemId: string,
+  mode: "cleanup" | "summarize",
+  raw: string,
+  seed?: string | null,
+  cfg = loadConfig(),
+): Promise<SummarizeUpdateResult> {
+  const world = await loadWorld();
+  const item = world.items.find((i) => i.id === itemId) ?? null;
+  const provider = cfg.detector === "rules" ? null : getProvider(cfg);
+
+  // Deterministic result used both as the LLM's fallback and when no model runs.
+  const rules = (): SummarizeUpdateResult => ({
+    text: ruleCleanup(raw) || ruleCleanup(seed ?? ""),
+    proposedStatus: null,
+    questions: [],
+    source: "rules",
+    provider: null,
+    model: null,
+  });
+
+  if (!provider?.summarize || !item) return rules();
+
+  const built = inputFor(item, world);
+  const input: SummarizeInput = {
+    mode,
+    code: item.id.toUpperCase(),
+    title: item.title,
+    status: item.status,
+    owner: memberById(item.owner)?.name.split(" ")[0] ?? "unassigned",
+    raw,
+    seed: seed ?? null,
+    prior: built?.input.updates ?? [],
+    statusOptions: POST_STATUSES,
+  };
+
+  try {
+    const r = await provider.summarize(input);
+    const text = r.text.trim();
+    if (!text) return rules();
+    const proposed = r.proposedStatus && (POST_STATUSES as string[]).includes(r.proposedStatus)
+      ? (r.proposedStatus as ItemStatus)
+      : null;
+    return {
+      text,
+      proposedStatus: mode === "cleanup" ? null : proposed,
+      questions: mode === "cleanup" ? [] : r.questions,
+      source: "llm",
+      provider: provider.name,
+      model: provider.model,
+    };
+  } catch {
+    return rules();
+  }
 }

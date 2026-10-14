@@ -17,7 +17,7 @@ import { openaiProvider } from "./openai";
 import { ollamaProvider } from "./ollama";
 import type { ComposeInput, DetectInput, LlmProvider } from "./types";
 
-export type { ComposeInput, ComposeResult, DetectInput, LlmDetection, LlmProvider } from "./types";
+export type { ComposeInput, ComposeResult, DetectInput, LlmDetection, LlmProvider, SummarizeInput, SummarizeResult } from "./types";
 
 export function getProvider(cfg: AgentConfig): LlmProvider | null {
   try {

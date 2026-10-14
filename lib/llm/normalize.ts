@@ -6,7 +6,7 @@
 // threshold decision is ours, not the model's.
 
 import { THRESHOLD } from "../detect";
-import type { LlmDetection, Phrase } from "./types";
+import type { LlmDetection, Phrase, SummarizeResult } from "./types";
 
 function phrases(raw: unknown, sign: 1 | -1): Phrase[] {
   if (!Array.isArray(raw)) return [];
@@ -31,4 +31,23 @@ export function normalizeDetection(raw: unknown): LlmDetection {
   const score = [...hits, ...relief].reduce((a, h) => a + h.weight, 0);
   const rationale = String(o.rationale ?? "").trim();
   return { hits, relief, score, signal: score >= THRESHOLD, rationale };
+}
+
+/**
+ * Repair the summarize JSON into a trustworthy SummarizeResult. A local model
+ * may omit fields, return questions as a string, or propose a status outside
+ * the allowed set — so we coerce the shape and (when `allowed` is given) drop a
+ * proposed status that is not one of the valid values, leaving it for the human.
+ */
+export function normalizeSummarize(raw: unknown, allowed?: string[]): SummarizeResult {
+  const o = (raw ?? {}) as Record<string, unknown>;
+  const text = String(o.text ?? "").trim();
+  const qRaw = o.questions;
+  const questions = (Array.isArray(qRaw) ? qRaw : qRaw ? [qRaw] : [])
+    .map((q) => String(q ?? "").trim())
+    .filter(Boolean)
+    .slice(0, 2);
+  let proposedStatus: string | null = o.proposedStatus == null ? null : String(o.proposedStatus).trim() || null;
+  if (proposedStatus && allowed && !allowed.includes(proposedStatus)) proposedStatus = null;
+  return { text, proposedStatus, questions };
 }

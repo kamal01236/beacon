@@ -81,6 +81,72 @@ export function buildComposeMessage(input: ComposeInput): string {
   ].join("\n");
 }
 
+// ---- single-field update composer (clean up / summarize) -----------------
+//
+// Two narrow tasks behind the one input field an assignee uses to post a
+// stand-up update:
+//   - "cleanup"   : fix grammar / spelling / dictation artifacts in the note,
+//                   change NOTHING about its meaning. Plain text out.
+//   - "summarize" : fold the agent's seed suggestion + the recent thread + the
+//                   person's note into ONE coherent update, propose a status
+//                   from the allowed set, and ask clarifying questions ONLY when
+//                   something material is genuinely ambiguous.
+// The model never posts — a person confirms the result first — and it must not
+// invent facts, so a healthy note summarizes to itself with no questions.
+
+import type { SummarizeInput } from "./types";
+
+/** Hard ceiling on a composed update so cost and length stay bounded. */
+export const SUMMARIZE_MAX_TOKENS = 220;
+
+export const CLEANUP_SYSTEM_PROMPT = `You tidy up a single stand-up update written or dictated by a teammate.
+
+Rules:
+- Fix spelling, grammar, punctuation, and speech-to-text artifacts. Make it read as clear, professional plain text.
+- Do NOT change the meaning, add facts, remove information, or add any preamble, sign-off, or commentary.
+- Keep it concise — one short paragraph. Plain text only; no markdown, no bullet points.
+- Return ONLY the cleaned-up text.`;
+
+export const SUMMARIZE_SYSTEM_PROMPT = `You help a teammate post a clear stand-up update on one work item. You are given the agent's suggested draft, the recent update thread, and the person's own note. Combine them into ONE concise update IN THE PERSON'S VOICE.
+
+Rules:
+- Write 1-3 sentences, plain text only — no markdown, no bullets, no preamble or sign-off.
+- Base the update ONLY on what the inputs say. Do NOT invent progress, dates, names, or blockers. If the person's note contradicts the seed, follow the note.
+- Propose "proposedStatus" as EXACTLY ONE of the allowed status values, or null if there is not enough to tell.
+- "questions": ask a short clarifying question ONLY when something material is missing or ambiguous (e.g. a vague blocker with no cause, or no next step for a stalled item). If the update already reads clearly, return an empty array. Never ask more than 2.
+- Return ONLY the JSON object described by the schema.`;
+
+/** JSON schema for the summarize task (OpenAI structured outputs). */
+export const SUMMARIZE_SCHEMA = {
+  type: "object",
+  additionalProperties: false,
+  required: ["text", "proposedStatus", "questions"],
+  properties: {
+    text: { type: "string" },
+    proposedStatus: { type: ["string", "null"] },
+    questions: { type: "array", items: { type: "string" } },
+  },
+} as const;
+
+export function buildSummarizeMessage(input: SummarizeInput): string {
+  if (input.mode === "cleanup") {
+    return `Clean up this update:\n"""\n${input.raw}\n"""`;
+  }
+  const thread = input.prior?.length
+    ? input.prior.map((u) => `  day ${u.day}: ${u.text}`).join("\n")
+    : "  (no earlier updates)";
+  return [
+    `Item ${input.code} — "${input.title}" (current status: ${input.status}, owner: ${input.owner}).`,
+    `Allowed status values: ${(input.statusOptions ?? []).join(", ") || "(none given)"}`,
+    `Agent's suggested draft: ${input.seed ? `"${input.seed}"` : "(none)"}`,
+    `Recent update thread (oldest first):`,
+    thread,
+    `The person's note (their words — may be rough or dictated):`,
+    `"""\n${input.raw || "(empty)"}\n"""`,
+    `Compose the update.`,
+  ].join("\n");
+}
+
 export function buildUserMessage(input: DetectInput): string {
   const thread = input.updates.length
     ? input.updates.map((u) => `  day ${u.day}: ${u.text}`).join("\n")

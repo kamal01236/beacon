@@ -61,6 +61,33 @@ export interface ComposeResult {
   text: string; // one or two plain-text sentences
 }
 
+/**
+ * What the agent sends the model for the single-field update composer. The
+ * person writes (or dictates) one free-text note; the model either just cleans
+ * it up ("cleanup") or folds it together with the agent's seed suggestion and
+ * the recent update thread into one coherent stand-up update ("summarize"). It
+ * never decides anything that posts — a person confirms the result first.
+ */
+export interface SummarizeInput {
+  mode: "cleanup" | "summarize";
+  code: string; // e.g. "REQ-001"
+  title: string;
+  status: string; // the item's current status
+  owner: string; // first name only — no other PII leaves the box
+  raw: string; // what the person typed or dictated (may be messy / grammatically rough)
+  seed?: string | null; // the agent's suggested draft, if any (summarize mode)
+  /** This item's recent updates, oldest first, for context (summarize mode). */
+  prior?: { day: number; text: string }[];
+  /** The valid status values the model may propose (summarize mode). */
+  statusOptions?: string[];
+}
+
+export interface SummarizeResult {
+  text: string; // the cleaned / summarized update, plain text
+  proposedStatus?: string | null; // one of statusOptions, or null if unsure (summarize mode)
+  questions: string[]; // clarifying questions, empty if the update already reads clearly
+}
+
 export interface LlmProvider {
   readonly name: string; // "openai" | "ollama"
   readonly model: string;
@@ -68,4 +95,6 @@ export interface LlmProvider {
   embed?(text: string): Promise<EmbedResult>;
   /** Draft a short, plain-text comment from a known intent. Optional: a provider without it falls back to the template. */
   compose?(input: ComposeInput): Promise<ComposeResult>;
+  /** Clean up or summarize a free-text update. Optional: a provider without it falls back to rule-based cleanup. */
+  summarize?(input: SummarizeInput): Promise<SummarizeResult>;
 }

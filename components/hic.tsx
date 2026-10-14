@@ -4,12 +4,13 @@
 // lets a person act on what the agent found.
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { code, firstName, memberById, type World } from "@/lib/data";
 import { SIGNAL_LABEL, type AgentRequest, type AgentSignal, type Confidence, type Proposal } from "@/lib/agent";
 import { detect } from "@/lib/detect";
 import { analyze, type Analysis } from "@/lib/analyze";
 import { compose, type Composed } from "@/lib/compose";
+import { summarizeUpdate, type Summary } from "@/lib/summarize";
 import { DISMISS_REASONS, effective, undo, type BeaconEvent } from "@/lib/events";
 import { SYSTEM_ACTOR } from "@/lib/policy";
 import { outbox } from "@/lib/world";
@@ -255,6 +256,56 @@ export function SignalCard({ s, w }: { s: AgentSignal; w: World }) {
 
 // ---- posting an update -------------------------------------------------------
 
+/**
+ * Browser speech-to-text for the single-field composer, via the Web Speech API.
+ * No dependency and no server round-trip — it runs in Chrome / Edge / desktop
+ * Safari and simply reports `supported: false` everywhere else, so the mic is
+ * only ever offered where it actually works. Final transcripts are appended to
+ * the field; the person edits and (optionally) cleans them up afterwards.
+ */
+function useDictation(onAppend: (chunk: string) => void) {
+  const [supported, setSupported] = useState(false);
+  const [listening, setListening] = useState(false);
+  const recRef = useRef<any>(null);
+  const appendRef = useRef(onAppend);
+  appendRef.current = onAppend;
+
+  useEffect(() => {
+    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    setSupported(!!SR);
+    return () => { try { recRef.current?.stop(); } catch { /* already stopped */ } };
+  }, []);
+
+  const toggle = () => {
+    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SR) return;
+    if (listening) { try { recRef.current?.stop(); } catch { /* noop */ } return; }
+    const rec = new SR();
+    rec.lang = "en-US";
+    rec.interimResults = false;
+    rec.continuous = true;
+    rec.onresult = (e: any) => {
+      let chunk = "";
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        if (e.results[i].isFinal) chunk += e.results[i][0].transcript;
+      }
+      if (chunk.trim()) appendRef.current(chunk.trim());
+    };
+    rec.onend = () => setListening(false);
+    rec.onerror = () => setListening(false);
+    recRef.current = rec;
+    try { rec.start(); setListening(true); } catch { setListening(false); }
+  };
+
+  return { supported, listening, toggle };
+}
+
+/** One honest line saying which engine produced a composed/cleaned result. */
+function summarySource(s: Summary): string {
+  if (s.source === "llm") return `${s.provider ?? "agent"}${s.model ? ` (${s.model})` : ""}`;
+  return "local rules (no model configured)";
+}
+
 const STATUS_OPTIONS: { v: ItemStatus; l: string }[] = [
   { v: "in_progress", l: "In progress" },
   { v: "blocked", l: "Blocked" },
@@ -263,65 +314,257 @@ const STATUS_OPTIONS: { v: ItemStatus; l: string }[] = [
   { v: "todo", l: "To do" },
 ];
 
-export function UpdateForm({ item, requestId, onDone }: { item: Item; requestId?: string; onDone?: () => void }) {
-  const { act, canAct } = useActor();
-  const [status, setStatus] = useState<ItemStatus>(item.status === "spillover" || item.status === "overdue" ? "in_progress" : item.status);
+/** The agent's starting point for the composer: a proposed status and its plain-language read of the item. */
+export interface UpdateSeed {
+  status: ItemStatus;
+  note: string;
+}
+
+export function UpdateForm({ item, requestId, onDone, seed }: { item: Item; requestId?: string; onDone?: () => void; seed?: UpdateSeed }) {
+  const { canAct } = useActor();
+  if (!canAct) return null;
+  return <SmartUpdateForm item={item} requestId={requestId} onDone={onDone} seed={seed} />;
+}
+
+const postableStatus = (s: ItemStatus): ItemStatus => (s === "spillover" || s === "overdue" ? "in_progress" : s);
+
+/** A small numbered step heading, so the flow reads as 1 → 2 → 3. */
+function StepLabel({ n, title, done, active }: { n: number; title: string; done?: boolean; active?: boolean }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 14, marginBottom: 6 }}>
+      <span
+        aria-hidden
+        style={{
+          width: 20, height: 20, borderRadius: 999, flex: "0 0 20px",
+          display: "grid", placeItems: "center", fontSize: 11, fontWeight: 800,
+          background: done ? "var(--ok, #1a7f37)" : active ? "var(--navy-3)" : "var(--line, #d7dbe0)",
+          color: done || active ? "var(--on-navy, #fff)" : "var(--ink-4)",
+        }}
+      >
+        {done ? "✓" : n}
+      </span>
+      <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: 0.3, textTransform: "uppercase", color: active || done ? "var(--ink-2, inherit)" : "var(--ink-4)" }}>{title}</span>
+    </div>
+  );
+}
+
+function SmartUpdateForm({ item, requestId, onDone, seed }: { item: Item; requestId?: string; onDone?: () => void; seed?: UpdateSeed }) {
+  const { act } = useActor();
+  // Standalone (on the item page) it starts collapsed behind an "Add update"
+  // button; opened from an agent request it is already in context, so it shows.
+  const [open, setOpen] = useState(!!requestId || !!onDone);
+  const [status, setStatus] = useState<ItemStatus>(seed ? postableStatus(seed.status) : postableStatus(item.status));
   const [text, setText] = useState("");
+  const [advanced, setAdvanced] = useState(false);
+
+  // Advanced (manual) fields — the original field-by-field fallback.
   const [next, setNext] = useState("");
   const [blocker, setBlocker] = useState("");
+
+  // Composer state. `lastMode` tracks what the agent last produced; only a
+  // completed "summarize" unlocks posting (step 3), and ANY edit to the text
+  // clears it, so the person always posts exactly what the agent last read.
+  const [summary, setSummary] = useState<Summary | null>(null);
+  const [lastMode, setLastMode] = useState<null | "cleanup" | "summarize">(null);
+  const [working, setWorking] = useState<null | "cleanup" | "summarize">(null);
   const { analysis, busy, run, reset } = useReanalyze(item.id);
-  if (!canAct) return null;
+
+  // Editing (typing or dictation) invalidates the agent's reading.
+  const invalidate = () => { setSummary(null); setLastMode(null); reset(); };
+  const { supported: micOk, listening, toggle } = useDictation((chunk) => {
+    setText((t) => (t ? `${t} ${chunk}` : chunk));
+    invalidate();
+  });
+
+  const checked = lastMode === "summarize"; // step 2 complete → step 3 unlocked
   const d = detect(`${text} ${blocker}`);
   const draftText = `${text} ${status === "blocked" ? blocker : ""}`.trim();
-  const submit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!text.trim()) return;
-    act({ kind: "update.posted", itemId: item.id, status, text: text.trim(), next: next.trim() || null, blocker: status === "blocked" ? blocker.trim() || null : null, requestId });
-    setText(""); setNext(""); setBlocker(""); reset();
-    onDone?.();
+
+  const resetAll = () => {
+    setText(""); setNext(""); setBlocker(""); setSummary(null); setLastMode(null); setAdvanced(false); reset();
   };
+  const close = () => { resetAll(); if (onDone) onDone(); else setOpen(false); };
+
+  const post = () => {
+    if (!text.trim()) return;
+    act({
+      kind: "update.posted",
+      itemId: item.id,
+      status,
+      text: text.trim(),
+      next: advanced ? next.trim() || null : null,
+      blocker: advanced && status === "blocked" ? blocker.trim() || null : null,
+      requestId,
+    });
+    close();
+  };
+
+  const doCompose = async (mode: "cleanup" | "summarize") => {
+    if (!text.trim() && mode === "cleanup") return;
+    setWorking(mode);
+    try {
+      const s = await summarizeUpdate(item.id, mode, text, seed?.note ?? null);
+      if (s.text) setText(s.text); // the result lands back in the one field — one source of truth
+      setSummary(s);
+      setLastMode(mode);
+      if (mode === "summarize") {
+        if (s.proposedStatus) setStatus(s.proposedStatus);
+        reset();
+        if (s.text) run(s.text, s.proposedStatus ?? status); // analyze what the agent now understands
+      } else {
+        reset();
+      }
+    } finally {
+      setWorking(null);
+    }
+  };
+
+  // ---- collapsed: just the entry button -----------------------------------
+  if (!open) {
+    return (
+      <button className="btn p sm" type="button" style={{ marginTop: 10 }} onClick={() => setOpen(true)}>
+        + Add today&apos;s update
+      </button>
+    );
+  }
+
+  // ---- advanced: the original field-by-field form -------------------------
+  if (advanced) {
+    return (
+      <form onSubmit={(e) => { e.preventDefault(); post(); }} style={{ marginTop: 10 }}>
+        <div className="hint" style={{ marginBottom: 8 }}>Manual entry — fill each field yourself. No summarizing step.</div>
+        <div className="field">
+          <div className="fl">Status</div>
+          <select className="inp" value={status} onChange={(e) => setStatus(e.target.value as ItemStatus)}>
+            {STATUS_OPTIONS.map((o) => <option key={o.v} value={o.v}>{o.l}</option>)}
+          </select>
+        </div>
+        <div className="field">
+          <div className="fl">What happened, in your words</div>
+          <textarea className="ta" rows={3} value={text} onChange={(e) => setText(e.target.value)} placeholder="e.g. Waiting on the email provider sandbox, not sure how to proceed." />
+          {text.trim().length > 8 && (
+            <div className={`detectbox${d.signal && status !== "blocked" ? " hot" : ""}`}>
+              {d.signal && status !== "blocked" ? (
+                <>Beacon reads this as <b>blocked</b> ({d.hits.map((h) => `${h.phrase} +${h.weight}`).join(", ")}). After you post, it will ask <b>you</b> first whether to raise a blocker — no one else is alerted until you answer.</>
+              ) : d.hits.length || d.relief.length ? (
+                <>Language check: {[...d.hits, ...d.relief].map((h) => `${h.phrase} ${h.weight > 0 ? "+" : ""}${h.weight}`).join(", ")} — below the blocker threshold.</>
+              ) : (
+                <>Language check: no blocker wording.</>
+              )}
+            </div>
+          )}
+        </div>
+        {status === "blocked" && (
+          <div className="field">
+            <div className="fl">What is blocking it</div>
+            <input className="inp" value={blocker} onChange={(e) => setBlocker(e.target.value)} placeholder="e.g. Email provider sandbox access not granted" />
+          </div>
+        )}
+        <div className="field">
+          <div className="fl">Next step (optional)</div>
+          <input className="inp" value={next} onChange={(e) => setNext(e.target.value)} />
+        </div>
+        {analysis && <AnalysisPanel a={analysis} />}
+        <div className="btnrow">
+          <button className="btn g sm" type="button" disabled={!text.trim() || busy} onClick={() => run(draftText, status)}>
+            {busy ? "Analyzing…" : "Re-analyze with agent"}
+          </button>
+          <button className="btn p sm" type="submit" disabled={!text.trim()}>Post update</button>
+          <button className="btn g sm" type="button" onClick={() => setAdvanced(false)}>Back to guided</button>
+          <button className="btn g sm" type="button" onClick={close}>Cancel</button>
+        </div>
+      </form>
+    );
+  }
+
+  // ---- default: guided, one conversational field --------------------------
   return (
-    <form onSubmit={submit} style={{ marginTop: 10 }}>
+    <div style={{ marginTop: 10, borderLeft: "2px solid var(--navy-3)", paddingLeft: 12 }}>
+      {seed && (
+        <div className="detectbox" style={{ marginBottom: 4 }}>
+          <b>Agent&apos;s starting read</b> — {seed.note}
+        </div>
+      )}
+
+      {/* Step 1 — write or speak */}
+      <StepLabel n={1} title="Write or speak your update" active={!checked} done={checked} />
       <div className="field">
-        <div className="fl">Status</div>
-        <select className="inp" value={status} onChange={(e) => setStatus(e.target.value as ItemStatus)}>
+        <div className="fl" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <span>In your own words — rough notes are fine</span>
+          {micOk && (
+            <button className={`btn ${listening ? "p" : "g"} sm`} type="button" disabled={working !== null} onClick={toggle} aria-pressed={listening}>
+              {listening ? "● Stop" : "🎤 Speak"}
+            </button>
+          )}
+        </div>
+        <textarea
+          className="ta"
+          rows={3}
+          value={text}
+          onChange={(e) => { setText(e.target.value); invalidate(); }}
+          placeholder={listening ? "Listening… speak your update." : "Type or dictate. The agent tidies the grammar and checks it with you before anything posts."}
+        />
+        <div className="btnrow" style={{ marginTop: 8 }}>
+          <button className="btn g sm" type="button" disabled={!text.trim() || working !== null} onClick={() => doCompose("cleanup")}>
+            {working === "cleanup" ? "Tidying…" : "Fix grammar"}
+          </button>
+          {lastMode === "cleanup" && summary && (
+            <span className="stamp">Tidied up by {summarySource(summary)}</span>
+          )}
+        </div>
+      </div>
+
+      {/* Step 2 — let the agent read it */}
+      <StepLabel n={2} title="Let the agent read it" active={!!text.trim() && !checked} done={checked} />
+      <div className="btnrow">
+        <button
+          className={`btn ${checked ? "g" : "p"} sm`}
+          type="button"
+          disabled={(!text.trim() && !seed) || working !== null}
+          onClick={() => doCompose("summarize")}
+        >
+          {working === "summarize" ? "Summarizing…" : checked ? "Summarize again" : "Summarize & check"}
+        </button>
+        {!text.trim() && !seed && <span className="hint">Write something above first.</span>}
+      </div>
+
+      {lastMode === "summarize" && summary && (
+        <div className="detectbox" style={{ marginTop: 10 }}>
+          <div style={{ color: "var(--ink-4)", marginBottom: 4 }}>
+            Summarized by {summarySource(summary)}
+            {summary.proposedStatus && <> · proposed status <b>{summary.proposedStatus.replace("_", " ")}</b> (change it below if wrong)</>}
+          </div>
+          {summary.questions.length > 0 ? (
+            <>
+              <div><b>The agent needs to know:</b></div>
+              <ul style={{ margin: "6px 0 0", paddingLeft: 18, lineHeight: 1.5 }}>
+                {summary.questions.map((q, i) => <li key={i}>{q}</li>)}
+              </ul>
+              <div className="hint" style={{ marginTop: 6 }}>Add the answer in the field above, then <b>Summarize &amp; check</b> again.</div>
+            </>
+          ) : (
+            <div>Read cleanly — no open questions. Confirm the status and post below.</div>
+          )}
+        </div>
+      )}
+
+      {analysis && <AnalysisPanel a={analysis} />}
+
+      {/* Step 3 — confirm & post */}
+      <StepLabel n={3} title="Confirm and post" active={checked} />
+      <div className="field">
+        <div className="fl">Status to post</div>
+        <select className="inp" value={status} disabled={!checked} onChange={(e) => setStatus(e.target.value as ItemStatus)}>
           {STATUS_OPTIONS.map((o) => <option key={o.v} value={o.v}>{o.l}</option>)}
         </select>
       </div>
-      <div className="field">
-        <div className="fl">What happened, in your words</div>
-        <textarea className="ta" rows={3} value={text} onChange={(e) => setText(e.target.value)} placeholder="e.g. Waiting on the email provider sandbox, not sure how to proceed." />
-        {text.trim().length > 8 && (
-          <div className={`detectbox${d.signal && status !== "blocked" ? " hot" : ""}`}>
-            {d.signal && status !== "blocked" ? (
-              <>Beacon reads this as <b>blocked</b> ({d.hits.map((h) => `${h.phrase} +${h.weight}`).join(", ")}). After you post, it will ask <b>you</b> first whether to raise a blocker — no one else is alerted until you answer.</>
-            ) : d.hits.length || d.relief.length ? (
-              <>Language check: {[...d.hits, ...d.relief].map((h) => `${h.phrase} ${h.weight > 0 ? "+" : ""}${h.weight}`).join(", ")} — below the blocker threshold.</>
-            ) : (
-              <>Language check: no blocker wording.</>
-            )}
-          </div>
-        )}
-      </div>
-      {status === "blocked" && (
-        <div className="field">
-          <div className="fl">What is blocking it</div>
-          <input className="inp" value={blocker} onChange={(e) => setBlocker(e.target.value)} placeholder="e.g. Email provider sandbox access not granted" />
-        </div>
-      )}
-      <div className="field">
-        <div className="fl">Next step (optional)</div>
-        <input className="inp" value={next} onChange={(e) => setNext(e.target.value)} />
-      </div>
-      {analysis && <AnalysisPanel a={analysis} />}
       <div className="btnrow">
-        <button className="btn g sm" type="button" disabled={!text.trim() || busy} onClick={() => run(draftText, status)}>
-          {busy ? "Analyzing…" : "Re-analyze with agent"}
-        </button>
-        <button className="btn p sm" type="submit" disabled={!text.trim()}>Post update</button>
-        {onDone && <button className="btn g sm" type="button" onClick={onDone}>Cancel</button>}
+        <button className="btn p sm" type="button" disabled={!checked || !text.trim() || working !== null} onClick={post}>Post update</button>
+        <button className="btn g sm" type="button" onClick={() => setAdvanced(true)}>Enter fields manually</button>
+        <button className="btn g sm" type="button" onClick={close}>Cancel</button>
       </div>
-    </form>
+      {!checked && <div className="hint" style={{ marginTop: 6 }}>Summarize &amp; check first so the agent confirms it understands — then posting unlocks.</div>}
+    </div>
   );
 }
 
