@@ -1,0 +1,38 @@
+%% C4 level 1 - System context. Who uses Beacon, and what it talks to.
+flowchart TB
+  subgraph people["People"]
+    direction LR
+    MEM["Team member<br/>posts one update,<br/>answers what the agent asks"]
+    FAC["Facilitator / Scrum Master<br/>triages signals,<br/>approves every change"]
+    MGR["Delivery manager<br/>reads aggregate health only"]
+  end
+
+  BEACON["<b>BEACON</b><br/>AI companion layer over the tracker<br/>surfaces hidden blockers - explains attention<br/>keeps a reversible record of every decision"]
+
+  subgraph ext["External systems"]
+    direction LR
+    TRACKER["Jira / Azure DevOps<br/><i>system of record for the backlog</i><br/>prototype: faked from data/*.json"]
+    MODEL["Model provider<br/>OpenAI API or local Ollama<br/><i>optional - rules work without it</i>"]
+    KB["Team knowledge base<br/>runbooks the team wrote"]
+  end
+
+  MEM -->|"an update in plain words"| BEACON
+  FAC -->|"accept / dismiss / approve"| BEACON
+  MGR -->|"opens the overview"| BEACON
+
+  BEACON -->|"asks the author to confirm first,<br/>before anyone else is told"| MEM
+  BEACON -->|"ranked attention list,<br/>each number explained"| FAC
+  BEACON -->|"team-level health,<br/>no individual scoring"| MGR
+
+  TRACKER -->|"items, status, comments"| BEACON
+  BEACON -->|"writes back ONLY what<br/>a human approved"| TRACKER
+  BEACON -->|"one item thread,<br/>first names only"| MODEL
+  MODEL -->|"structured verdict<br/>+ the phrases behind it"| BEACON
+  KB -->|"matching runbook + its author"| BEACON
+
+  classDef person fill:#0F2A4A,stroke:#07192E,color:#FFFFFF
+  classDef core fill:#0E6A6A,stroke:#07403F,color:#FFFFFF
+  classDef external fill:#F2F3F5,stroke:#8A93A0,color:#2A2F38,stroke-dasharray:4 3
+  class MEM,FAC,MGR person
+  class BEACON core
+  class TRACKER,MODEL,KB external

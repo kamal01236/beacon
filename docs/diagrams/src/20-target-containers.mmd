@@ -1,0 +1,67 @@
+%% FUTURE - target architecture for phases 4 and 5. Purple, dashed boxes do not
+%% exist yet. Everything solid is built today and does not need replacing.
+flowchart TB
+  subgraph clients["Clients"]
+    direction LR
+    WEBC["Web app<br/><i>built</i>"]
+    BOT["Teams / Slack bot<br/>answer a question, post an update<br/><i>phase 4</i>"]
+  end
+
+  subgraph edge["Edge"]
+    direction LR
+    IDP["Identity provider (SSO)<br/>OIDC - groups to roles<br/><i>phase 4</i>"]
+    GW["Ingress<br/>TLS, HSTS, rate limit<br/><i>phase 4</i>"]
+  end
+
+  subgraph svc["Beacon services"]
+    direction TB
+    APIX["API + UI<br/>role checks ENFORCED server side<br/><i>built, enforcement phase 4</i>"]
+    BRAINX["The brain<br/><i>built, unchanged</i>"]
+    SYNC["Tracker sync service<br/>webhooks in, approved writes out,<br/>conflict detection<br/><i>phase 4</i>"]
+    QUEUE["Job queue + scheduler<br/>runs, syncs, digests, retries<br/><i>phase 4</i>"]
+    AUDIT["Audit + export service<br/>subject access, pseudonymisation<br/><i>phase 4 / 5</i>"]
+  end
+
+  subgraph data["Data"]
+    direction LR
+    PGX[("Postgres<br/>+ pgvector for the KB<br/><i>built; vectors phase 3/4</i>")]
+    REDIS[("Redis<br/>shared rate limits, locks, cache<br/><i>phase 4</i>")]
+    OBJ[("Object store<br/>audit exports, snapshots<br/><i>phase 5</i>")]
+  end
+
+  subgraph obs["Operations"]
+    direction LR
+    LOGS["Log shipping<br/>JSON lines already emitted<br/><i>built</i>"]
+    METRICS["Metrics + alerts<br/>run failures, provider errors,<br/>dismissal rate<br/><i>phase 4</i>"]
+  end
+
+  TRACKERX["Jira / Azure DevOps<br/>system of record"]
+  MODELX["Model provider<br/>OpenAI, or self-hosted"]
+
+  WEBC --> GW
+  BOT --> GW
+  GW --> IDP
+  GW --> APIX
+  APIX --> BRAINX
+  APIX --> PGX
+  APIX --> REDIS
+  QUEUE --> APIX
+  QUEUE --> SYNC
+  SYNC <-->|"REST + webhooks"| TRACKERX
+  APIX --> MODELX
+  AUDIT --> PGX
+  AUDIT --> OBJ
+  APIX --> LOGS
+  SYNC --> LOGS
+  LOGS --> METRICS
+
+  classDef core fill:#0E6A6A,stroke:#07403F,color:#FFFFFF
+  classDef inproc fill:#E6F0F0,stroke:#0E6A6A,color:#0B3B3B
+  classDef store fill:#FDF4E3,stroke:#B4761A,color:#5C3A06
+  classDef external fill:#F2F3F5,stroke:#8A93A0,color:#2A2F38,stroke-dasharray:4 3
+  classDef future fill:#F3EEFB,stroke:#6B46C1,color:#32225E,stroke-dasharray:5 3
+  class WEBC,APIX,BRAINX core
+  class PGX,OBJ store
+  class TRACKERX,MODELX external
+  class BOT,IDP,GW,SYNC,QUEUE,AUDIT,REDIS,METRICS future
+  class LOGS inproc

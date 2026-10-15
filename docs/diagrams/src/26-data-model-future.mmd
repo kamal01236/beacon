@@ -1,0 +1,62 @@
+%% FUTURE (phases 4-5) - what the schema gains. Existing tables are unchanged;
+%% these are additions, which is why no migration of the base snapshot is needed.
+erDiagram
+  TENANT ||--o{ TEAM : has
+  TENANT ||--o{ APP_USER : has
+  TEAM ||--o{ MEMBERSHIP : grants
+  APP_USER ||--o{ MEMBERSHIP : holds
+  APP_USER ||--o{ EVENT : acts
+  TEAM ||--o{ ITEM : scopes
+  ITEM ||--o{ SYNC_STATE : "tracked by"
+  ITEM ||--o{ OUTBOX : "queued for"
+  KB_ARTICLE ||--|| KB_EMBEDDING : "indexed by"
+  TEAM ||--o{ SNAPSHOT_DAY : "measured by"
+
+  TENANT {
+    uuid id PK
+    text name
+    text region "phase 5"
+    int retention_days
+  }
+  APP_USER {
+    uuid id PK
+    uuid tenant_id FK
+    text external_subject "OIDC sub"
+    text email
+    text status "active or pseudonymised"
+    timestamptz pseudonymised_at
+  }
+  MEMBERSHIP {
+    uuid user_id FK
+    uuid team_id FK
+    text role "facilitator, manager, member"
+  }
+  SYNC_STATE {
+    text item_id PK
+    text tracker_key "e.g. PORTAL-412"
+    text tracker_version "the cursor we last read"
+    timestamptz last_pulled_at
+    text last_error
+  }
+  OUTBOX {
+    uuid id PK
+    text item_id FK
+    text idempotency_key "one write, once"
+    jsonb change "the approved change"
+    text approved_by FK
+    text state "pending, sent, conflict, failed"
+    int attempts
+  }
+  KB_EMBEDDING {
+    text article_id PK
+    vector embedding "1536 - replaces tag overlap"
+    text model
+  }
+  SNAPSHOT_DAY {
+    text team_id FK
+    date day PK
+    int open_items "a real burndown needs a daily row"
+    int blocked_items
+    int signals_open
+    numeric accept_rate
+  }

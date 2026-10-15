@@ -1,0 +1,43 @@
+%% Failure modes. Each branch ends in a state that still works, and says what a
+%% person sees. Nothing here is hypothetical - every path is in the tests.
+flowchart TB
+  START(["a request arrives<br/>or the clock ticks"])
+
+  Q1{"is a model configured?"}
+  Q2{"did the provider answer<br/>inside the deadline?"}
+  Q3{"is DATABASE_URL set?"}
+  Q4{"is Postgres reachable?"}
+  Q5{"is /api reachable at all?"}
+
+  RULES["<b>rule detector runs</b><br/>same Detection shape<br/>board and signals unaffected"]
+  MODELOK["<b>model verdict used</b><br/>phrases shown as evidence"]
+  RETRY["bounded retries with backoff<br/>429 honours Retry-After<br/>401 / 400 not retried"]
+  COUNT["the run records errors,<br/>/api/agent/run reports the count"]
+
+  PG["<b>Postgres</b><br/>concurrent-safe, full history"]
+  FILE["<b>.data/ file store</b><br/>atomic writes; corruption quarantined.<br/>/api/health reports <b>degraded</b>"]
+  LOCALM["<b>browser-only mode</b><br/>bundled seed + localStorage decisions;<br/>the privacy card says which store is live"]
+
+  START --> Q5
+  Q5 -->|"no - static export or server down"| LOCALM
+  Q5 -->|"yes"| Q1
+  Q1 -->|"no (the default)"| RULES
+  Q1 -->|"yes"| Q2
+  Q2 -->|"yes"| MODELOK
+  Q2 -->|"no"| RETRY --> Q2
+  RETRY -.->|"budget spent"| RULES
+  RULES --> COUNT
+  START --> Q3
+  Q3 -->|"no"| FILE
+  Q3 -->|"yes"| Q4
+  Q4 -->|"yes"| PG
+  Q4 -->|"no - re-probed every 60s"| FILE
+
+  classDef core fill:#0E6A6A,stroke:#07403F,color:#FFFFFF
+  classDef inproc fill:#E6F0F0,stroke:#0E6A6A,color:#0B3B3B
+  classDef store fill:#FDF4E3,stroke:#B4761A,color:#5C3A06
+  classDef gate fill:#FFF0F0,stroke:#B3261E,color:#5C100B
+  class RULES,MODELOK,PG core
+  class RETRY,COUNT inproc
+  class FILE,LOCALM gate
+  class START store

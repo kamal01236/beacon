@@ -1,0 +1,82 @@
+name: CI
+
+# The quality gate. Every push and every pull request runs the same checks a
+# developer runs locally with `npm run verify`, plus both build targets — the
+# server app and the static export — because a change can break one and not the
+# other (see docs/TESTING.md).
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Typecheck, lint, secrets, diagrams, tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # check:secrets inspects history for tracked .env files.
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Lint
+        run: npm run lint
+      - name: No secrets committed
+        run: npm run check:secrets
+      - name: Diagrams are up to date with their sources
+        run: npm run diagrams:check
+      - name: Tests
+        run: npm test
+
+  build:
+    name: Build (${{ matrix.target }})
+    runs-on: ubuntu-latest
+    needs: verify
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [server, pages]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Build
+        run: npm run build
+        env:
+          # The default target is the server app; "pages" is the static export.
+          BUILD_TARGET: ${{ matrix.target == 'pages' && 'pages' || '' }}
+
+  audit:
+    name: Dependency audit (advisory)
+    runs-on: ubuntu-latest
+    # Non-blocking on purpose: a new advisory against a transitive dependency is
+    # information for the next change, not a reason to stop a deploy that was
+    # already reviewed. It is surfaced, never silently skipped.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high

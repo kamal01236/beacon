@@ -1,26 +1,69 @@
 // OpenAI provider. Uses the Chat Completions API with a strict JSON-schema
 // response format, so the model is forced to return exactly the `LlmDetection`
-// shape. No SDK — one `fetch`, so there is nothing extra to install and the same
-// code works against any OpenAI-compatible endpoint (set OPENAI_BASE_URL).
+// shape. No SDK — one POST through lib/llm/http.ts, so there is nothing extra to
+// install, every call carries a deadline and bounded retries, and the same code
+// works against any OpenAI-compatible endpoint (set OPENAI_BASE_URL).
 
 import type { AgentConfig } from "../config";
-import { SYSTEM_PROMPT, DETECTION_SCHEMA, buildUserMessage, COMPOSE_SYSTEM_PROMPT, COMPOSE_MAX_TOKENS, buildComposeMessage, CLEANUP_SYSTEM_PROMPT, SUMMARIZE_SYSTEM_PROMPT, SUMMARIZE_SCHEMA, SUMMARIZE_MAX_TOKENS, buildSummarizeMessage } from "./prompt";
-import type { ComposeInput, ComposeResult, DetectInput, EmbedResult, LlmDetection, LlmProvider, SummarizeInput, SummarizeResult } from "./types";
+import {
+  SYSTEM_PROMPT,
+  DETECTION_SCHEMA,
+  buildUserMessage,
+  COMPOSE_SYSTEM_PROMPT,
+  COMPOSE_MAX_TOKENS,
+  buildComposeMessage,
+  CLEANUP_SYSTEM_PROMPT,
+  SUMMARIZE_SYSTEM_PROMPT,
+  SUMMARIZE_SCHEMA,
+  SUMMARIZE_MAX_TOKENS,
+  buildSummarizeMessage,
+} from "./prompt";
+import type {
+  ComposeInput,
+  ComposeResult,
+  DetectInput,
+  EmbedResult,
+  LlmDetection,
+  LlmProvider,
+  SummarizeInput,
+  SummarizeResult,
+} from "./types";
 import { normalizeDetection, normalizeSummarize } from "./normalize";
+import { LlmError, postJson } from "./http";
+
+interface ChatResponse {
+  choices?: { message?: { content?: string } }[];
+}
+interface EmbedResponse {
+  data?: { embedding?: number[] }[];
+}
+
+/** The model is told to return JSON; a body that will not parse is an outage. */
+function parseJson(provider: string, raw: string): unknown {
+  try {
+    return JSON.parse(raw || "{}");
+  } catch {
+    throw new LlmError(provider, "model returned a body that is not JSON", { attempts: 1, timedOut: false, elapsedMs: 0 });
+  }
+}
 
 export function openaiProvider(cfg: AgentConfig["openai"]): LlmProvider {
   if (!cfg.apiKey) throw new Error("OPENAI_API_KEY is not set");
-  const headers = { "content-type": "application/json", authorization: `Bearer ${cfg.apiKey}` };
+  const headers = { authorization: `Bearer ${cfg.apiKey}` };
+  const chatUrl = `${cfg.baseUrl.replace(/\/$/, "")}/chat/completions`;
+  const embedUrl = `${cfg.baseUrl.replace(/\/$/, "")}/embeddings`;
+  const content = (res: ChatResponse) => res.choices?.[0]?.message?.content ?? "";
 
   return {
     name: "openai",
     model: cfg.model,
 
     async detect(input: DetectInput): Promise<LlmDetection> {
-      const res = await fetch(`${cfg.baseUrl}/chat/completions`, {
-        method: "POST",
+      const res = await postJson<ChatResponse>({
+        provider: "openai",
+        url: chatUrl,
         headers,
-        body: JSON.stringify({
+        body: {
           model: cfg.model,
           temperature: 0,
           messages: [
@@ -31,30 +74,27 @@ export function openaiProvider(cfg: AgentConfig["openai"]): LlmProvider {
             type: "json_schema",
             json_schema: { name: "beacon_detection", strict: true, schema: DETECTION_SCHEMA },
           },
-        }),
+        },
       });
-      if (!res.ok) throw new Error(`OpenAI ${res.status}: ${await res.text()}`);
-      const data = (await res.json()) as { choices: { message: { content: string } }[] };
-      const raw = data.choices?.[0]?.message?.content ?? "{}";
-      return normalizeDetection(JSON.parse(raw));
+      return normalizeDetection(parseJson("openai", content(res)));
     },
 
     async embed(text: string): Promise<EmbedResult> {
-      const res = await fetch(`${cfg.baseUrl}/embeddings`, {
-        method: "POST",
+      const res = await postJson<EmbedResponse>({
+        provider: "openai",
+        url: embedUrl,
         headers,
-        body: JSON.stringify({ model: cfg.embedModel, input: text }),
+        body: { model: cfg.embedModel, input: text },
       });
-      if (!res.ok) throw new Error(`OpenAI embed ${res.status}: ${await res.text()}`);
-      const data = (await res.json()) as { data: { embedding: number[] }[] };
-      return { model: cfg.embedModel, vector: data.data?.[0]?.embedding ?? [] };
+      return { model: cfg.embedModel, vector: res.data?.[0]?.embedding ?? [] };
     },
 
     async compose(input: ComposeInput): Promise<ComposeResult> {
-      const res = await fetch(`${cfg.baseUrl}/chat/completions`, {
-        method: "POST",
+      const res = await postJson<ChatResponse>({
+        provider: "openai",
+        url: chatUrl,
         headers,
-        body: JSON.stringify({
+        body: {
           model: cfg.model,
           temperature: 0.3,
           max_tokens: COMPOSE_MAX_TOKENS,
@@ -62,19 +102,18 @@ export function openaiProvider(cfg: AgentConfig["openai"]): LlmProvider {
             { role: "system", content: COMPOSE_SYSTEM_PROMPT },
             { role: "user", content: buildComposeMessage(input) },
           ],
-        }),
+        },
       });
-      if (!res.ok) throw new Error(`OpenAI ${res.status}: ${await res.text()}`);
-      const data = (await res.json()) as { choices: { message: { content: string } }[] };
-      return { text: (data.choices?.[0]?.message?.content ?? "").trim() };
+      return { text: content(res).trim() };
     },
 
     async summarize(input: SummarizeInput): Promise<SummarizeResult> {
       const cleanup = input.mode === "cleanup";
-      const res = await fetch(`${cfg.baseUrl}/chat/completions`, {
-        method: "POST",
+      const res = await postJson<ChatResponse>({
+        provider: "openai",
+        url: chatUrl,
         headers,
-        body: JSON.stringify({
+        body: {
           model: cfg.model,
           temperature: 0.2,
           max_tokens: SUMMARIZE_MAX_TOKENS,
@@ -90,13 +129,11 @@ export function openaiProvider(cfg: AgentConfig["openai"]): LlmProvider {
                   json_schema: { name: "beacon_summary", strict: true, schema: SUMMARIZE_SCHEMA },
                 },
               }),
-        }),
+        },
       });
-      if (!res.ok) throw new Error(`OpenAI ${res.status}: ${await res.text()}`);
-      const data = (await res.json()) as { choices: { message: { content: string } }[] };
-      const content = data.choices?.[0]?.message?.content ?? "";
-      if (cleanup) return { text: content.trim(), proposedStatus: null, questions: [] };
-      return normalizeSummarize(JSON.parse(content || "{}"), input.statusOptions);
+      const text = content(res);
+      if (cleanup) return { text: text.trim(), proposedStatus: null, questions: [] };
+      return normalizeSummarize(parseJson("openai", text), input.statusOptions);
     },
   };
 }

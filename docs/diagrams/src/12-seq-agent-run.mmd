@@ -1,0 +1,37 @@
+%% One scheduled agent run, end to end. Note what is NOT here: no write to the
+%% tracker, and no change to any item. A run only reads, computes and records.
+sequenceDiagram
+  autonumber
+  participant W as Agent worker (the clock)
+  participant A as POST /api/agent/run
+  participant S as Store adapter
+  participant F as Facts + detector
+  participant M as Model provider
+  participant B as Brain (score, signals)
+  participant D as Store (Postgres or files)
+
+  W->>A: trigger run (schedule)
+  Note over W,A: quiet hours respected. A run already in flight is joined, never duplicated
+  A->>S: loadWorld()
+  S->>D: ask for the base snapshot and the effective events
+  D-->>S: items, updates, events
+  S-->>A: the world
+  loop for each active, unfinished item
+    A->>F: build the item thread (last 5 updates, first name only)
+    A->>M: detect(thread)
+    alt provider answers inside the deadline
+      M-->>A: phrases, weights, rationale
+      Note over A: the score is recomputed from the phrases and OUR threshold decides
+    else timeout, 5xx or a body that is not JSON
+      M--xA: no usable answer
+      A->>F: run the rule detector for that text instead
+      Note over A: the error is counted and reported in the run result
+    end
+  end
+  A->>F: install the verdicts as a detection override
+  A->>B: getRun(), getSignals(), getRequests()
+  B-->>A: signals with evidence, questions to ask, pending proposals
+  A->>F: clear the override
+  A->>D: record one run row (trigger, detector, model, snapshot)
+  A-->>W: scanned, llmCalls, disagreements, open, errors
+  Note over W,D: nothing was written to the tracker and no item changed. Only a person can do that

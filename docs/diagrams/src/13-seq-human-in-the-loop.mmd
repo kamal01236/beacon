@@ -1,0 +1,28 @@
+%% The human-in-the-loop path, which is the product's central claim.
+%% Read the alternatives: nothing moves to the tracker without a person.
+sequenceDiagram
+  autonumber
+  participant MA as Marcus (author and owner)
+  participant BE as Beacon
+  participant SA as Sarah (facilitator)
+  participant LOG as Decision log
+  participant TR as Jira / Azure DevOps
+
+  Note over BE: a day-8 update reads as blocked, but no blocker has been raised
+  BE->>BE: raise a hidden-blocker signal. Evidence is the phrases, confidence is inferred with its basis
+  BE->>MA: "Your update reads as blocked. Are you blocked?"
+  Note over BE,MA: the AUTHOR is asked first. Nobody else is alerted yet, and the question is re-asked every run
+  alt Marcus answers yes
+    MA->>BE: yes, waiting on the client for credentials
+    BE->>SA: proposal preview "Status in progress to blocked" plus a drafted comment, both editable
+    SA->>BE: approve, edit, or reject
+    BE->>LOG: proposal.decided approved, by Sarah, at this time
+    LOG->>TR: the approved change, labelled AI-assisted
+    Note over LOG,TR: reversible. event.undone removes its effect without deleting the record
+  else Marcus answers no
+    MA->>BE: no, it only reads that way
+    BE->>LOG: signal.decided dismissed, with a reason
+    Note over BE,LOG: the dismissal rate feeds confidence calibration. Above 30 percent the detector is retuned
+  else nobody answers
+    BE->>SA: escalated on the next run, with the question still unanswered
+  end

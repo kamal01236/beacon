@@ -4,16 +4,10 @@
 // server uses. The static Pages export omits it, so the browser falls back to
 // the bundled seed there.
 
-import { NextResponse } from "next/server";
+import { ok, route } from "@/lib/server/http";
 import { loadBase } from "@/lib/server/store";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function GET() {
-  try {
-    return NextResponse.json(await loadBase());
-  } catch (err) {
-    return NextResponse.json({ error: String(err instanceof Error ? err.message : err) }, { status: 500 });
-  }
-}
+export const GET = route("GET /api/base", async () => ok(await loadBase()));

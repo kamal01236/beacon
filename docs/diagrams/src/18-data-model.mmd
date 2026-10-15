@@ -1,0 +1,81 @@
+%% The data model as it exists today. Two kinds of table: a BASE SNAPSHOT of
+%% what the tracker gave us, and the APPEND-ONLY log of what people decided.
+%% Nothing derived is ever stored - the score and the signals are computed.
+erDiagram
+  MEMBER ||--o{ ITEM : owns
+  MEMBER ||--o{ UPDATE : writes
+  MEMBER ||--o{ EVENT : acts
+  MEMBER ||--o{ KB_ARTICLE : authors
+  SPRINT ||--o{ ITEM : contains
+  SPRINT ||--o{ UPDATE : "groups by day"
+  ITEM ||--o{ UPDATE : "has a thread of"
+  ITEM ||--o{ ITEM : "dependsOn (many to many)"
+  ITEM ||--o{ EVENT : "is the subject of"
+  AGENT_RUN ||--o{ ITEM : scanned
+
+  MEMBER {
+    text id PK
+    text name
+    text role "job title"
+    text email "never sent to a model"
+    int capacityHrs
+  }
+  SPRINT {
+    text id PK
+    text name
+    date startDate
+    date endDate
+    text status "completed, active, planned"
+    int velocityGoal
+    int velocityActual "null while running"
+  }
+  ITEM {
+    text id PK
+    text sprintId FK
+    text type "requirement, action, decision, risk"
+    text title
+    text owner FK "nullable - no owner is itself a signal"
+    date dueDate
+    text priority "low, medium, high - the facilitator sets this"
+    text status
+    text blocker "nullable"
+    date blockerRaisedDate "when it was raised FORMALLY"
+    bool clientImpact
+    bool spillover
+    int clarityScore "nullable, 0-10"
+  }
+  UPDATE {
+    text id PK
+    text itemId FK
+    text author FK "null on a missing-update placeholder"
+    date date
+    int sprintDay
+    text progressText "the words the detector reads"
+    text blockerText "nullable"
+    text statusStructured
+    text source "seed or beacon"
+  }
+  EVENT {
+    text id PK
+    timestamptz at "append-only"
+    text actor FK
+    text kind "8 kinds - only 2 change an item"
+    jsonb payload
+  }
+  AGENT_RUN {
+    bigserial id PK
+    timestamptz ran_at
+    text trigger "schedule, event, manual"
+    text detector "rules, llm, both"
+    text provider "nullable"
+    text model "nullable"
+    int items_scanned
+    int signals_open
+    jsonb summary "the snapshot the UI replays"
+  }
+  KB_ARTICLE {
+    text id PK
+    text author FK
+    jsonb data "title, tags, summary, steps"
+    jsonb embedding "null until phase 3 - becomes vector(1536)"
+  }

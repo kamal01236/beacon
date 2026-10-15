@@ -9,6 +9,27 @@ risk up honestly, and keeps a person in control of every action.
 This README is the single source of truth for what is built and what comes next
 (see **Roadmap**). The product flows live in code; there is no separate design canvas.
 
+## Documentation
+
+| Read this | For |
+|---|---|
+| **[docs/DIAGRAMS.md](docs/DIAGRAMS.md)** | **28 diagrams** — C4 levels 1–4, data-flow levels 0–2, sequences, state machines, data model, deployment, threat model, observability, roadmap, and the phase 4–5 target architecture. Open **[docs/diagrams/index.html](docs/diagrams/index.html)** in a browser for the viewer (filter, zoom, SVG/PNG export, print the whole set as a PDF — it works offline). The sources are `docs/diagrams/src/*.mmd` |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | what the pieces are, why they are arranged this way, and where to look in the code |
+| [docs/DATA-FLOW.md](docs/DATA-FLOW.md) | what data moves, where it rests, and exactly what crosses a boundary |
+| [docs/API.md](docs/API.md) | all ten endpoints, the shared error contract, and `curl` examples |
+| [docs/OPERATIONS.md](docs/OPERATIONS.md) | run it, tell whether it is healthy, and what to do when it is not |
+| [docs/SECURITY-AND-PRIVACY.md](docs/SECURITY-AND-PRIVACY.md) | data classification, the controls that exist, and the gaps that do not |
+| [docs/PRODUCTION-READINESS.md](docs/PRODUCTION-READINESS.md) | an honest scorecard, and the five things to do before a pilot |
+| [docs/TESTING.md](docs/TESTING.md) | the test strategy, and what each file pins down |
+| [docs/adr/](docs/adr/) | 12 decision records — the *why* behind the shape of this system |
+| [CONTRIBUTING.md](CONTRIBUTING.md) · [SECURITY.md](SECURITY.md) · [CHANGELOG.md](CHANGELOG.md) | working on it, reporting a problem, what changed |
+
+Product-facing documents stay where they were: [PROPOSAL.md](PROPOSAL.md) (the
+pitch), [AGENT-ARCHITECTURE.md](AGENT-ARCHITECTURE.md) (agent design and
+integration), [DEMO-SCRIPT.md](DEMO-SCRIPT.md),
+[PRODUCT-EXPLAINER.md](PRODUCT-EXPLAINER.md),
+[HACKATHON-BRIEF.md](HACKATHON-BRIEF.md) (the fixed ask).
+
 ## What the prototype is
 
 - **One team, predefined data.** ~100 work items across four sprints (`data/*.json`),
@@ -42,7 +63,24 @@ npm run local          # Postgres if DATABASE_URL is set, else .data/
 npm run local:nodb     # force the no-database path
 
 npm run build          # production build (BUILD_TARGET=pages for the static export)
+
+# Everything in containers: app + Postgres + the agent worker (same image).
+docker compose up --build
+docker compose run --rm seed     # once: load data/*.json into Postgres
 ```
+
+### Quality gates
+
+```bash
+npm run verify     # typecheck · lint · secret scan · diagram check · 122 tests
+npm test           # the tests alone (~1s)
+npm run diagrams   # regenerate the diagram set from docs/diagrams/src
+```
+
+`npm run verify` is exactly what CI runs on every push and pull request
+(`.github/workflows/ci.yml`), which then builds **both** targets; the Pages
+deploy runs the same gate before publishing. Details:
+[docs/TESTING.md](docs/TESTING.md).
 
 On Windows, use `npm run local` rather than `npm run dev` when you need `/api`: the
 dev server's incremental compile has been seen to corrupt the webpack runtime for the
@@ -60,10 +98,17 @@ Full backend setup, including the WSL walkthrough: [BACKEND-PLAN.md](BACKEND-PLA
 - **GitHub Pages (static, live):** https://kamal01236.github.io/beacon/ — every push to
   `main` rebuilds via `.github/workflows/deploy.yml`. The whole human-in-control loop
   works there too, because the prototype keeps decisions in the browser.
-- **WSL / Vercel / container:** `npm run build && npm start`. Static-export settings
-  only switch on under `BUILD_TARGET=pages`.
+- **WSL / Vercel / container:** `npm run build && npm start`, or
+  `docker compose up --build` for the app, Postgres and the worker together.
+  Static-export settings only switch on under `BUILD_TARGET=pages`; security
+  headers and the standalone bundle only apply to the server target.
+- **The gate runs before every deploy.** `.github/workflows/deploy.yml` runs
+  `npm run verify` first, so publishing never skips the checks.
 
-Runtime and hosting options for the live agent: [DEPLOYMENT-AND-RUNTIME.md](DEPLOYMENT-AND-RUNTIME.md).
+Runtime and hosting options for the live agent:
+[DEPLOYMENT-AND-RUNTIME.md](DEPLOYMENT-AND-RUNTIME.md). Operating it day to day,
+including the health endpoint and the incident playbook:
+[docs/OPERATIONS.md](docs/OPERATIONS.md).
 
 ## How it works
 
@@ -170,11 +215,14 @@ travel with *Export my data*.
 app/            one folder per screen; all render inside components/AppShell.tsx
   overview/ agent/ board/ item/[id]/ delivery/ people/ people/[memberId]/
   insights/ retro/ inbox/ manager/ my-work/ get-help/ trends/
+  error.tsx global-error.tsx not-found.tsx   failure stays inside the shell
   api/          server build only; hidden from the static export
+    health/                     liveness + readiness: store, detector, build
     base/ world/ events/        the snapshot, the folded world, the decision log
                                 (events also answers DELETE — the instance reset)
-    agent/run/                  POST triggers a run · GET lists recorded runs
+    agent/run/                  POST triggers a run (single flight) · GET lists runs
     agent/analyze/ compose/     re-read an edited draft · draft one comment
+    agent/summarize/            clean up or summarize one free-text update
     data/retention/             GET what the policy would drop · POST apply it
     jira/search/                the faked Jira REST payload Beacon ingests
 components/     AppShell, Nav, PersonaSwitcher, RoleProvider, ui, charts,
@@ -185,17 +233,24 @@ lib/            data (seed + World), demo (frozen clock), facts, priorityScore,
                 metrics (charts), events (decision log), world (seed + events),
                 useWorld (React hooks), prefs (theme/density), toast, nav, types,
                 config (env → AgentConfig), policy (retention / access / erasure,
-                stated once), analyze + compose (client API helpers)
+                stated once), analyze + compose + summarize (client API helpers),
+                validate (request schemas), version (build identity)
   lib/server/   SERVER ONLY: store (Postgres or .data/), db, fileStore, jira, agent
-                (the run: LLM → detection override → the same brain)
+                (the run: LLM → detection override → the same brain),
+                http (one contract for every route), log (structured + redacted)
   lib/llm/      one LlmProvider seam, two implementations (openai, ollama),
                 prompt, normalize (recomputes score from weights — never trusts
-                the model's own arithmetic), types
+                the model's own arithmetic), http (deadline + bounded retries), types
 agent/          run.mjs — the worker: just the clock, calls POST /api/agent/run
+test/           122 tests (node:test + tsx): the invariants, the brain, the API
 db/             schema.sql (items, updates, events, agent_runs, knowledge_base)
 data/           seed JSON + kb.json
+docs/           architecture, data flow, API, operations, security, readiness,
+                testing, 12 ADRs, and diagrams/ (28 Mermaid sources + a viewer)
 scripts/        build (two targets), local (one-command stack), seed-db,
-                retain (the retention sweep's clock), check-secrets, generate-seed
+                retain (the retention sweep's clock), check-secrets, generate-seed,
+                build-diagrams (generates + validates the diagram set)
+Dockerfile · docker-compose.yml   app + Postgres + worker, app and worker one image
 ```
 
 **Roles** (switch from the persona menu): **Facilitator** (Sarah) — Overview · Agent ·

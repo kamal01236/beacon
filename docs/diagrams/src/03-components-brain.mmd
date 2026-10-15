@@ -1,0 +1,35 @@
+%% C4 level 3 - Components inside the brain. Read it top to bottom: this is the
+%% order a run computes things in, and every step is pure and explainable.
+flowchart TB
+  IN["<b>Input</b><br/>base snapshot + recorded events"]
+  WORLD["<b>world.ts</b><br/>buildWorldFrom(base, events)<br/>one reducer, server and browser"]
+  FACTS["<b>facts.ts</b><br/>per item: dates, cadence, blocker timeline,<br/>update language, dependency graph<br/><i>memoised per world + detector generation</i>"]
+  DETECT["<b>detect.ts</b><br/>phrase weights, THRESHOLD = 4<br/>every hit is a named phrase"]
+  OVERRIDE["<b>detection override</b><br/>a model verdict for one exact text,<br/>installed for the length of a run"]
+  SCORE["<b>priorityScore.ts</b><br/>14 named RULES, ATTENTION_THRESHOLD = 65<br/><b>score = sum of the reasons shown</b>"]
+  SIGNALS["<b>agent.ts - getSignals()</b><br/>hidden-blocker - blocked - cannot-deliver<br/>overdue - stale-status - missing-update - at-risk<br/>each with evidence, source, confidence"]
+  REQ["<b>agent.ts - getRequests()</b><br/>what the agent must ASK a person<br/>re-asked every run until answered"]
+  PROP["<b>proposals</b><br/>a tracker change, written as one<br/>approvable line - state: pending"]
+  INSIGHT["<b>insights.ts</b><br/>brief, roll-up, participation,<br/>root causes, retro themes, adoption"]
+  KBM["<b>kbFor() / helperFor()</b><br/>a runbook and a teammate<br/>who solved this before"]
+
+  IN --> WORLD --> FACTS
+  DETECT --> FACTS
+  OVERRIDE -.->|"replaces the rule reading<br/>for that text only"| DETECT
+  FACTS --> SCORE
+  FACTS --> SIGNALS
+  SCORE -->|"ranks and sets severity"| SIGNALS
+  SIGNALS --> PROP
+  SIGNALS --> REQ
+  KBM --> SIGNALS
+  FACTS --> INSIGHT
+  SIGNALS --> INSIGHT
+
+  classDef inproc fill:#E6F0F0,stroke:#0E6A6A,color:#0B3B3B
+  classDef core fill:#0E6A6A,stroke:#07403F,color:#FFFFFF
+  classDef gate fill:#FFF0F0,stroke:#B3261E,color:#5C100B
+  classDef store fill:#FDF4E3,stroke:#B4761A,color:#5C3A06
+  class IN,OVERRIDE store
+  class WORLD,FACTS,DETECT,INSIGHT,KBM inproc
+  class SCORE,SIGNALS core
+  class PROP,REQ gate

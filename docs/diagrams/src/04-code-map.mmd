@@ -1,0 +1,73 @@
+%% C4 level 4 - Code map. Which module may import which. The rule that matters:
+%% nothing under lib/server or lib/llm may be imported by a browser screen.
+flowchart LR
+  subgraph client["Browser bundle (client)"]
+    direction TB
+    SCREENS["app/*/page.tsx<br/>screens"]
+    HIC["components/hic.tsx<br/>the approve / decide controls"]
+    USEWORLD["lib/useWorld.ts"]
+    EVENTS["lib/events.ts<br/>append-only log client"]
+    PREFS["lib/prefs.ts<br/>theme + density, this browser only"]
+  end
+
+  subgraph shared["Shared brain (runs in both)"]
+    direction TB
+    DATA["lib/data.ts"]
+    WORLDM["lib/world.ts"]
+    FACTSM["lib/facts.ts"]
+    DETECTM["lib/detect.ts"]
+    SCOREM["lib/priorityScore.ts"]
+    AGENTM["lib/agent.ts"]
+    INSIGHTM["lib/insights.ts"]
+    METRICS["lib/metrics.ts"]
+    POLICY["lib/policy.ts"]
+    TYPES["lib/types.ts"]
+  end
+
+  subgraph serveronly["Server only (never bundled to the browser)"]
+    direction TB
+    ROUTES["app/api/**/route.ts"]
+    HTTP["lib/server/http.ts<br/>+ lib/validate.ts"]
+    STORE["lib/server/store.ts"]
+    SAGENT["lib/server/agent.ts"]
+    JIRA["lib/server/jira.ts"]
+    DB["lib/server/db.ts"]
+    FILESTORE["lib/server/fileStore.ts"]
+    LOG["lib/server/log.ts"]
+    LLM["lib/llm/*"]
+    CONFIG["lib/config.ts"]
+  end
+
+  SCREENS --> USEWORLD --> EVENTS
+  SCREENS --> HIC
+  SCREENS --> PREFS
+  USEWORLD --> WORLDM
+  HIC --> AGENTM
+  WORLDM --> DATA
+  FACTSM --> DETECTM
+  SCOREM --> FACTSM
+  AGENTM --> SCOREM
+  INSIGHTM --> AGENTM
+  METRICS --> DATA
+  DATA --> TYPES
+
+  ROUTES --> HTTP
+  ROUTES --> STORE
+  ROUTES --> SAGENT
+  ROUTES --> POLICY
+  HTTP --> LOG
+  STORE --> WORLDM
+  STORE --> JIRA
+  STORE --> DB
+  STORE --> FILESTORE
+  SAGENT --> LLM
+  SAGENT --> AGENTM
+  LLM --> CONFIG
+  LLM --> DETECTM
+
+  classDef client fill:#0F2A4A,stroke:#07192E,color:#FFFFFF
+  classDef inproc fill:#E6F0F0,stroke:#0E6A6A,color:#0B3B3B
+  classDef core fill:#0E6A6A,stroke:#07403F,color:#FFFFFF
+  class SCREENS,HIC,USEWORLD,EVENTS,PREFS client
+  class DATA,WORLDM,FACTSM,DETECTM,SCOREM,AGENTM,INSIGHTM,METRICS,POLICY,TYPES inproc
+  class ROUTES,HTTP,STORE,SAGENT,JIRA,DB,FILESTORE,LOG,LLM,CONFIG core

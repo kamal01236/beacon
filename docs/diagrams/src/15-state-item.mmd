@@ -1,0 +1,34 @@
+%% The life of one work item. Every transition is caused by a person - either
+%% their own update, or a change they approved. The agent never moves an item.
+stateDiagram-v2
+  direction LR
+  [*] --> todo: imported from the tracker
+  todo --> in_progress: owner starts work
+  in_progress --> blocked: owner raises a blocker, or approves the proposal
+  blocked --> in_progress: blocker cleared, resolvedDate stamped
+  in_progress --> done: owner posts done
+  blocked --> done: delivered despite the blocker
+  in_progress --> overdue: past the due date, status not moved
+  overdue --> in_progress: owner posts an update
+  overdue --> done: delivered late
+  done --> [*]
+
+  [*] --> monitoring: a risk under watch
+  monitoring --> resolved: mitigated
+  resolved --> [*]
+
+  [*] --> spillover: carried over from the last sprint
+  spillover --> in_progress: picked up again
+
+  note right of blocked
+    Scoring while blocked: +30, plus 5 per day
+    blocked (max +20). Everything that depends
+    on it is flagged "cannot deliver", even if
+    its own status still says in progress.
+  end note
+
+  note right of overdue
+    A daily update is expected only for
+    in_progress, blocked and spillover.
+    Silence anywhere else is never nagged.
+  end note

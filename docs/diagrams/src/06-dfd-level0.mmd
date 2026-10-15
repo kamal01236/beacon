@@ -1,0 +1,33 @@
+%% Data flow diagram, level 0 (context). The dashed box is the trust boundary:
+%% everything inside it runs on infrastructure the team controls.
+flowchart TB
+  MEMBER(["Team member<br/><i>external entity</i>"])
+  FACIL(["Facilitator<br/><i>external entity</i>"])
+  MANAGER(["Manager<br/><i>external entity</i>"])
+  TRACKER(["Jira / Azure DevOps<br/><i>external entity</i>"])
+  PROVIDER(["Model provider<br/><i>external entity - off premises</i>"])
+
+  subgraph trust["Trust boundary - Beacon deployment"]
+    P0["<b>0</b><br/>Beacon<br/><i>process</i>"]
+    DS[("D1 - D3<br/>base snapshot - decision log - run log")]
+    P0 <--> DS
+  end
+
+  MEMBER -->|"F1 update text, status"| P0
+  P0 -->|"F2 question to answer,<br/>suggested draft"| MEMBER
+  FACIL -->|"F3 decision: accept / dismiss / approve"| P0
+  P0 -->|"F4 ranked signals with evidence"| FACIL
+  P0 -->|"F5 team-level health"| MANAGER
+  TRACKER -->|"F6 items, status, comments"| P0
+  P0 -->|"F7 approved change only"| TRACKER
+  P0 -->|"F8 one item thread:<br/>code, title, status, first name, update texts"| PROVIDER
+  PROVIDER -->|"F9 phrases + weights + rationale"| P0
+
+  classDef person fill:#0F2A4A,stroke:#07192E,color:#FFFFFF
+  classDef core fill:#0E6A6A,stroke:#07403F,color:#FFFFFF
+  classDef store fill:#FDF4E3,stroke:#B4761A,color:#5C3A06
+  classDef external fill:#F2F3F5,stroke:#8A93A0,color:#2A2F38,stroke-dasharray:4 3
+  class MEMBER,FACIL,MANAGER person
+  class TRACKER,PROVIDER external
+  class P0 core
+  class DS store

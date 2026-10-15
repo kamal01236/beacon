@@ -1,16 +1,26 @@
 {
   "name": "beacon",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "Beacon — an AI companion layer over Jira/Azure DevOps for agile delivery teams.",
+  "engines": {
+    "node": ">=20.11 <25"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "node scripts/build.mjs",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "next lint --max-warnings=0",
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test test/*.test.ts",
+    "test:watch": "tsx --test --watch test/*.test.ts",
+    "verify": "npm run typecheck && npm run lint && npm run check:secrets && npm run diagrams:check && npm test",
     "local": "node scripts/local.mjs",
     "local:nodb": "node scripts/local.mjs --no-db",
     "check:secrets": "node scripts/check-secrets.mjs",
+    "diagrams": "node scripts/build-diagrams.mjs",
+    "diagrams:check": "node scripts/build-diagrams.mjs --check",
+    "diagrams:render": "node scripts/build-diagrams.mjs --render",
     "db:seed": "node scripts/seed-db.mjs",
     "db:reset": "node scripts/seed-db.mjs --reset",
     "agent": "node agent/run.mjs",
@@ -30,6 +40,11 @@
     "@types/pg": "^8.11.10",
     "@types/react": "18.3.3",
     "@types/react-dom": "18.3.0",
+    "eslint": "8.57.1",
+    "eslint-config-next": "14.2.35",
+    "jsdom": "^25.0.1",
+    "mermaid": "^11.4.1",
+    "tsx": "4.19.2",
     "typescript": "5.5.3"
   }
 }

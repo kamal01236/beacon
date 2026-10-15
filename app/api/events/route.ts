@@ -2,7 +2,9 @@
 //   GET    : every recorded event (for the activity log / rebuild).
 //   POST   : append one decision { draft, actor }. The server twin of the
 //            browser's useActor().act() chokepoint. Real per-role permission
-//            enforcement lands in Phase 4 (auth); for now `actor` is trusted.
+//            enforcement lands in Phase 4 (auth); for now `actor` is trusted —
+//            validated as a well-formed member id, NOT as an authenticated
+//            identity. See docs/SECURITY-AND-PRIVACY.md.
 //   DELETE : empty the log — the demo-instance reset, not a privacy control.
 //            In server mode this log is the team's audit trail, so the caller is
 //            the facilitator-only reset in components/privacy.tsx, and it
@@ -11,38 +13,41 @@
 //            /api/data/retention; erasing one person's record is
 //            pseudonymisation in phase 4. All three are set out in lib/policy.ts.
 
-import { NextResponse } from "next/server";
+import { ok, route, WRITE_RATE_LIMIT } from "@/lib/server/http";
 import { appendEvent, clearEvents, loadEvents } from "@/lib/server/store";
-import type { Draft } from "@/lib/events";
+import { EVENT_KINDS, type Draft } from "@/lib/events";
+import { object, parseBody, str, oneOf, anyObject } from "@/lib/validate";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function GET() {
-  try {
-    return NextResponse.json(await loadEvents());
-  } catch (err) {
-    return NextResponse.json({ error: String(err instanceof Error ? err.message : err) }, { status: 500 });
-  }
-}
+/** An id we are willing to put in a log line and a database row. */
+const ID = str({ max: 64, pattern: /^[A-Za-z0-9._:-]+$/ });
 
-export async function POST(req: Request) {
-  try {
-    const body = (await req.json()) as { draft?: Draft; actor?: string };
-    if (!body?.draft || !body?.actor) {
-      return NextResponse.json({ error: "Expected { draft, actor }" }, { status: 400 });
-    }
-    const ev = await appendEvent(body.draft, body.actor);
-    return NextResponse.json(ev, { status: 201 });
-  } catch (err) {
-    return NextResponse.json({ error: String(err instanceof Error ? err.message : err) }, { status: 500 });
-  }
-}
+// The draft's own fields are validated by the kind-specific reducers in
+// lib/world.ts; what the boundary enforces is that this is an object naming a
+// kind the system knows, so an unknown kind cannot be appended to an
+// append-only log and then sit there forever as an unreadable row.
+const Body = object<{ draft: Record<string, unknown>; actor: string }>({
+  draft: anyObject(),
+  actor: ID,
+});
 
-export async function DELETE() {
-  try {
-    return NextResponse.json({ deleted: await clearEvents() });
-  } catch (err) {
-    return NextResponse.json({ error: String(err instanceof Error ? err.message : err) }, { status: 500 });
-  }
-}
+export const GET = route("GET /api/events", async () => ok(await loadEvents()));
+
+export const POST = route(
+  "POST /api/events",
+  async ({ req }) => {
+    const body = await parseBody(req, Body);
+    const kind = oneOf(EVENT_KINDS as unknown as readonly string[])(body.draft.kind, "draft.kind");
+    const ev = await appendEvent({ ...body.draft, kind } as unknown as Draft, body.actor);
+    return ok(ev, 201);
+  },
+  { limit: WRITE_RATE_LIMIT },
+);
+
+export const DELETE = route(
+  "DELETE /api/events",
+  async () => ok({ deleted: await clearEvents() }),
+  { limit: WRITE_RATE_LIMIT },
+);

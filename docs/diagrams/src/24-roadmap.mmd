@@ -1,0 +1,38 @@
+%% The plan, phase by phase. Phases 1-3 are built (the dates are when the work
+%% happened); 4 and 5 are estimates for a pilot, not commitments.
+gantt
+  title Beacon - phases 1 to 5
+  dateFormat YYYY-MM-DD
+  axisFormat %b %d
+  todayMarker off
+
+  section 1 Honest engine (done)
+  Computed attention score, 14 rules      :done, p1a, 2026-10-01, 3d
+  Language detector with named phrases    :done, p1b, after p1a, 2d
+  Seed reduced to raw facts only          :done, p1c, after p1b, 1d
+
+  section 2 Human in control (done)
+  Append-only decision log + undo         :done, p2a, 2026-10-05, 2d
+  Preview and approve every change        :done, p2b, after p2a, 2d
+  Adoption metrics, privacy panel         :done, p2c, after p2b, 1d
+
+  section 3 Live agent (core done)
+  Server store, Postgres or files         :done, p3a, 2026-10-09, 2d
+  API, worker clock, LLM behind the seam  :done, p3b, after p3a, 2d
+  Retention sweep + stated data policy    :done, p3c, after p3b, 1d
+  Production hardening, tests, CI, docs   :done, p3d, 2026-10-14, 1d
+  Daily snapshots for real burndown       :active, p3e, 2026-10-20, 5d
+  KB semantic match (pgvector)            :p3f, after p3e, 5d
+
+  section 4 Pilot with one team
+  SSO and server-side role enforcement    :p4a, 2026-11-03, 10d
+  Jira and ADO read sync                  :p4b, after p4a, 10d
+  Approved write-back with conflict check :p4c, after p4b, 10d
+  Erasure by pseudonymisation             :p4d, after p4a, 5d
+  Teams or Slack bot                      :p4e, after p4c, 8d
+  Measured first-week baseline            :p4f, after p4e, 5d
+
+  section 5 Enterprise
+  Many teams and programme roll-up        :p5a, 2027-02-01, 20d
+  Audit export and data residency         :p5b, after p5a, 15d
+  WCAG 2.2 AA audit                       :p5c, after p5b, 10d

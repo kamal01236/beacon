@@ -1,0 +1,32 @@
+%% Data flow diagram, level 2 - the detection pipeline (process 4 expanded).
+%% The point of this one: the model supplies EVIDENCE, never the decision.
+flowchart TB
+  TEXT["update text<br/><i>what the person actually wrote</i>"]
+  MODE{"detector mode<br/>BEACON_DETECTOR"}
+
+  RULES["<b>rule detector</b><br/>phrase table with weights<br/>struggling +3, stuck +3,<br/>waiting on others +2, ..."]
+  BUILD["<b>build the prompt input</b><br/>code, title, status, priority,<br/>days to due, FIRST NAME only,<br/>last 5 updates of THIS item"]
+  CALL["<b>provider call</b><br/>JSON schema response<br/>deadline + bounded retries"]
+  NORM["<b>normalize</b><br/>drop junk entries, clamp weights,<br/><b>recompute the score from the phrases</b>,<br/>apply OUR threshold"]
+  CMP["<b>compare</b><br/>model vs rules<br/>disagreements counted per run"]
+  DET["<b>Detection</b><br/>score, hits[], relief[], signal"]
+  FALLBACK["<b>fall back to the rules</b><br/>same shape, nothing breaks"]
+
+  TEXT --> MODE
+  MODE -->|"rules"| RULES --> DET
+  MODE -->|"llm or both"| BUILD --> CALL
+  CALL -->|"ok"| NORM --> DET
+  CALL -->|"timeout, 5xx, bad JSON,<br/>no key, provider down"| FALLBACK --> DET
+  MODE -->|"both"| RULES
+  NORM --> CMP
+  RULES --> CMP
+  DET --> OUT["used by facts - score - signals<br/><i>unchanged, synchronous</i>"]
+
+  classDef core fill:#0E6A6A,stroke:#07403F,color:#FFFFFF
+  classDef inproc fill:#E6F0F0,stroke:#0E6A6A,color:#0B3B3B
+  classDef store fill:#FDF4E3,stroke:#B4761A,color:#5C3A06
+  classDef external fill:#F2F3F5,stroke:#8A93A0,color:#2A2F38,stroke-dasharray:4 3
+  class TEXT,OUT store
+  class RULES,BUILD,NORM,CMP inproc
+  class CALL external
+  class DET,FALLBACK core

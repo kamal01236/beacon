@@ -1,0 +1,19 @@
+# Keep the build context small and secrets out of the image.
+node_modules
+.next
+out
+build
+.git
+.github
+.data
+.api.hidden
+*.tsbuildinfo
+# Secrets never enter the image; configuration is passed as environment.
+.env
+.env.*
+!.env.example
+# Documentation and diagrams are not needed at runtime.
+docs
+*.md
+!README.md
+coverage

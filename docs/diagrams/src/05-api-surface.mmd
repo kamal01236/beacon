@@ -1,0 +1,47 @@
+%% The API surface. Every route, what it touches, and which guards apply.
+%% Shaded rows on the right are the only two routes that WRITE.
+flowchart LR
+  subgraph read["Read routes - no side effects"]
+    direction TB
+    H["GET /api/health<br/><i>liveness + readiness, ?deep=1</i>"]
+    B["GET /api/base<br/><i>items + updates</i>"]
+    W["GET /api/world<br/><i>base + events applied</i>"]
+    E["GET /api/events<br/><i>the decision log</i>"]
+    J["GET /api/jira/search<br/><i>the raw ingested payload</i>"]
+    RG["GET /api/agent/run<br/><i>last runs, headline figures</i>"]
+    DG["GET /api/data/retention<br/><i>dry run - what would go</i>"]
+  end
+
+  subgraph model["Model-calling routes - write nothing, cost money"]
+    direction TB
+    AN["POST /api/agent/analyze<br/><i>re-read one edited draft</i>"]
+    CO["POST /api/agent/compose<br/><i>phrase one proposal comment</i>"]
+    SU["POST /api/agent/summarize<br/><i>clean up / summarize an update</i>"]
+    RP["POST /api/agent/run<br/><i>trigger a run - single flight</i>"]
+  end
+
+  subgraph write["Write routes - change recorded state"]
+    direction TB
+    EP["POST /api/events<br/><i>append one human decision</i>"]
+    ED["DELETE /api/events<br/><i>reset a demo instance</i>"]
+    DP["POST /api/data/retention<br/><i>apply the retention policy</i>"]
+  end
+
+  GUARD["<b>Every route goes through route()</b><br/>schema validation (400 names the field)<br/>body size cap - no-store<br/>request id in and out - one access log line<br/>internal errors never echoed in production"]
+  LIMIT1["rate limit<br/>30 / min / caller"]
+  LIMIT2["rate limit<br/>120 / min / caller"]
+
+  GUARD --- read
+  GUARD --- model
+  GUARD --- write
+  model --- LIMIT1
+  write --- LIMIT2
+
+  classDef core fill:#0E6A6A,stroke:#07403F,color:#FFFFFF
+  classDef inproc fill:#E6F0F0,stroke:#0E6A6A,color:#0B3B3B
+  classDef gate fill:#FFF0F0,stroke:#B3261E,color:#5C100B
+  classDef store fill:#FDF4E3,stroke:#B4761A,color:#5C3A06
+  class H,B,W,E,J,RG,DG inproc
+  class AN,CO,SU,RP core
+  class EP,ED,DP gate
+  class GUARD,LIMIT1,LIMIT2 store

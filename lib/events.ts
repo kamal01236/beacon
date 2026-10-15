@@ -73,6 +73,22 @@ export type BeaconEvent = Base &
   );
 
 export type EventKind = BeaconEvent["kind"];
+
+// The same list at runtime, for validating what arrives at POST /api/events.
+// Declared as a Record keyed by EventKind so the compiler fails the build if a
+// new event kind is added to the union and not listed here — a kind the API
+// would then reject.
+const EVENT_KIND_MAP: Record<EventKind, true> = {
+  "update.posted": true,
+  "signal.decided": true,
+  "proposal.decided": true,
+  "retro.adopted": true,
+  "feedback.given": true,
+  "event.undone": true,
+  "data.reset": true,
+  "data.retained": true,
+};
+export const EVENT_KINDS = Object.keys(EVENT_KIND_MAP) as EventKind[];
 // Distributes Omit over the union so each event's own fields survive.
 export type NewEvent = BeaconEvent extends infer E ? (E extends BeaconEvent ? Omit<E, "id" | "at"> : never) : never;
 /** An event as a screen proposes it; the acting person is filled in by useActor(). */

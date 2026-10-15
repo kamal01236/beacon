@@ -1,0 +1,45 @@
+%% How you find out something is wrong. Solid is emitted today; purple dashed is
+%% the phase-4 collection and alerting around it.
+flowchart TB
+  subgraph emit["What the system already emits"]
+    direction TB
+    REQLOG["one access log line per request<br/>route, status, duration, requestId<br/>secrets redacted"]
+    ERRLOG["one error line with the real message<br/>+ the first stack frames,<br/>tied to the same requestId"]
+    RUNROW["one row per agent run<br/>detector, model, scanned, llmCalls,<br/>disagreements, errors"]
+    HEALTH["/api/health<br/>ok | degraded | error<br/>store backend, detector, build commit"]
+    ADOPT["adoption counters in the product<br/>accepted vs dismissed, per signal kind"]
+  end
+
+  subgraph collect["Collection (phase 4)"]
+    direction TB
+    SHIP["log shipper<br/>JSON lines, no parsing rules needed"]
+    DASH["dashboard<br/>error rate, p95 latency,<br/>provider failures, run duration"]
+    ALERT["alerts"]
+  end
+
+  subgraph signals_["What is worth waking someone for"]
+    direction TB
+    AL1["/api/health degraded for > 15 min<br/><i>a configured database is unreachable</i>"]
+    AL2["3 consecutive agent runs failed<br/><i>the worker logs a consecutive count</i>"]
+    AL3["model error rate > 20 percent<br/><i>spend without value</i>"]
+    AL4["dismissal rate > 30 percent for a kind<br/><i>the detector is wrong, not the team</i>"]
+  end
+
+  REQLOG --> SHIP
+  ERRLOG --> SHIP
+  RUNROW --> DASH
+  HEALTH --> ALERT
+  ADOPT --> DASH
+  SHIP --> DASH --> ALERT
+  ALERT --> AL1
+  ALERT --> AL2
+  ALERT --> AL3
+  ALERT --> AL4
+
+  classDef core fill:#0E6A6A,stroke:#07403F,color:#FFFFFF
+  classDef inproc fill:#E6F0F0,stroke:#0E6A6A,color:#0B3B3B
+  classDef future fill:#F3EEFB,stroke:#6B46C1,color:#32225E,stroke-dasharray:5 3
+  classDef gate fill:#FFF0F0,stroke:#B3261E,color:#5C100B
+  class REQLOG,ERRLOG,RUNROW,HEALTH,ADOPT core
+  class SHIP,DASH,ALERT future
+  class AL1,AL2,AL3,AL4 gate

@@ -2,7 +2,10 @@ name: Deploy static UI to GitHub Pages
 
 # Builds the static export (BUILD_TARGET=pages) and publishes it to Pages.
 # This hosts the read-only dashboard UI only — the long-running agent runs
-# elsewhere (locally on WSL, or a server/container). See DEPLOYMENT-AND-RUNTIME.md.
+# elsewhere (a container, or locally on WSL). See docs/OPERATIONS.md.
+#
+# The same gate as CI runs here before anything is published: a deploy must not
+# be the one path that skips the checks.
 
 on:
   push:
@@ -23,11 +26,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version-file: .nvmrc
           cache: npm
       - run: npm ci
+      - name: Verify (typecheck, lint, secrets, diagrams, tests)
+        run: npm run verify
       - name: Build static export
         run: npm run build
         env:

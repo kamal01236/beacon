@@ -1,0 +1,49 @@
+%% FUTURE (phases 4-5) - the pilot and enterprise topology. Everything purple is
+%% new infrastructure; the application itself is the image that exists today.
+flowchart TB
+  USERS(["One delivery team<br/>(phase 5: many teams)"])
+
+  subgraph zone["Customer tenant - one region"]
+    direction TB
+    ING["Ingress / WAF<br/>TLS, HSTS, IP allow list"]
+    subgraph app["App tier - 2+ replicas"]
+      direction LR
+      A1["beacon app"]
+      A2["beacon app"]
+    end
+    WKR["worker pool<br/>agent runs, sync, digests"]
+    RDS[("Postgres (managed)<br/>PITR backups, pgvector")]
+    RED[("Redis<br/>locks, shared rate limits")]
+    SEC["Secret manager<br/>model key, tracker credentials"]
+    OBS["Logs, metrics, alerts"]
+  end
+
+  IDP2["Customer SSO (OIDC)"]
+  TRK2["Jira / Azure DevOps"]
+  MOD2["Model provider<br/><i>or self-hosted model for<br/>data-residency customers</i>"]
+
+  USERS --> ING --> app
+  ING --> IDP2
+  app --> RDS
+  app --> RED
+  WKR --> RDS
+  WKR --> TRK2
+  app --> MOD2
+  app --> SEC
+  WKR --> SEC
+  app --> OBS
+  WKR --> OBS
+
+  NOTE["<b>Why replicas change the code:</b> the in-process<br/>rate limiter and the single-flight run lock are<br/>per process today. Two replicas need Redis for<br/>both - listed in docs/PRODUCTION-READINESS.md."]
+  RED --- NOTE
+
+  classDef person fill:#0F2A4A,stroke:#07192E,color:#FFFFFF
+  classDef core fill:#0E6A6A,stroke:#07403F,color:#FFFFFF
+  classDef store fill:#FDF4E3,stroke:#B4761A,color:#5C3A06
+  classDef external fill:#F2F3F5,stroke:#8A93A0,color:#2A2F38,stroke-dasharray:4 3
+  classDef future fill:#F3EEFB,stroke:#6B46C1,color:#32225E,stroke-dasharray:5 3
+  class USERS person
+  class A1,A2 core
+  class RDS,RED,SEC store
+  class IDP2,TRK2,MOD2 external
+  class ING,WKR,OBS,NOTE future

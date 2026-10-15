@@ -1,0 +1,431 @@
+{
+  "title": "Beacon — architecture diagrams",
+  "subtitle": "What is built today, and what the next phases add. Every diagram is generated from a source file in docs/diagrams/src.",
+  "generatedBy": "npm run diagrams (scripts/build-diagrams.mjs)",
+  "groups": [
+    {
+      "id": "system",
+      "title": "1 · System structure",
+      "blurb": "Zooming in: who uses Beacon, which processes exist, what is inside them, and which module may import which."
+    },
+    {
+      "id": "dataflow",
+      "title": "2 · Data flow",
+      "blurb": "What data moves, where it rests, and where the trust boundaries are. Levels 0 → 2, in the usual DFD sense."
+    },
+    {
+      "id": "behaviour",
+      "title": "3 · Behaviour over time",
+      "blurb": "The three sequences that matter, plus the lifecycle of an item and of a signal."
+    },
+    {
+      "id": "data",
+      "title": "4 · Data model",
+      "blurb": "The entities and tables, and the rule that nothing derived is ever stored."
+    },
+    {
+      "id": "ops",
+      "title": "5 · Running it",
+      "blurb": "Deployment today, what the logs already tell you, and the threats each control answers."
+    },
+    {
+      "id": "future",
+      "title": "6 · Future phases (not built)",
+      "blurb": "Phase 4 (pilot) and phase 5 (enterprise). Purple, dashed boxes do not exist yet — that is the whole point of this section."
+    }
+  ],
+  "diagrams": [
+    {
+      "id": "context",
+      "file": "01-context.mmd",
+      "title": "System context (C4 level 1)",
+      "group": "system",
+      "type": "C4 context",
+      "status": "current",
+      "summary": "The one-page answer to \"what is this thing and who touches it\": three roles, Beacon in the middle, and three external systems.",
+      "howToRead": "Start with a person on the left and follow their arrow in, then follow what comes back out. Two arrows carry the product's whole stance: Beacon asks the AUTHOR to confirm before anyone else is told, and it writes back to the tracker only what a human approved.",
+      "review": [
+        "Is any role missing an arrow it needs?",
+        "Is anything shown as an input that the system cannot actually see?"
+      ]
+    },
+    {
+      "id": "containers",
+      "file": "02-containers.mmd",
+      "title": "Containers (C4 level 2)",
+      "group": "system",
+      "type": "C4 container",
+      "status": "current",
+      "summary": "The processes and stores that exist when Beacon is running: a browser, one Next.js server (UI + API + brain), the agent worker, and one of two stores.",
+      "howToRead": "Everything in the big box is one process — the brain is a library, not a service, which is why the browser and the server can never disagree about a score. The agent worker contains no logic at all: it is a clock that calls an endpoint.",
+      "review": [
+        "Could the brain be imported by the browser and the server and still behave identically? (It must.)",
+        "Is the store choice visible to an operator at runtime? (/api/health says which one is live.)"
+      ]
+    },
+    {
+      "id": "components-brain",
+      "file": "03-components-brain.mmd",
+      "title": "Inside the brain (C4 level 3)",
+      "group": "system",
+      "type": "C4 component",
+      "status": "current",
+      "summary": "The computation, in the order it happens: world → facts → detection → score → signals → questions and proposals.",
+      "howToRead": "Follow the arrows top to bottom; that is one run. The dashed arrow is the only way a model gets in — as a verdict for one exact piece of text, installed for the length of a run. Everything else is deterministic.",
+      "review": [
+        "Does anything downstream of the score write back upstream? (It must not.)",
+        "Where would a new rule go, and would it show up in the reasons list automatically?"
+      ]
+    },
+    {
+      "id": "code-map",
+      "file": "04-code-map.mmd",
+      "title": "Code map and import rules (C4 level 4)",
+      "group": "system",
+      "type": "module dependency",
+      "status": "current",
+      "summary": "Which module imports which, in three zones: the browser bundle, the shared brain, and server-only code.",
+      "howToRead": "The rule this diagram exists to enforce: nothing in the right-hand zone (lib/server, lib/llm, config) may ever be imported by a screen. If it were, a database URL or a model key would end up in the browser bundle.",
+      "review": [
+        "Trace any screen to the right-hand zone — there should be no path.",
+        "Does the shared middle zone do any I/O? (It must not.)"
+      ]
+    },
+    {
+      "id": "api-surface",
+      "file": "05-api-surface.mmd",
+      "title": "API surface and its guards",
+      "group": "system",
+      "type": "flowchart",
+      "status": "current",
+      "summary": "All ten endpoints (fourteen method-path pairs), grouped by what they can do: read, call a model, or change recorded state.",
+      "howToRead": "Read the guard box first — it applies to every route, which is why the route files themselves are four lines long. Then check the group a route sits in: that is the honest answer to \"what can this endpoint do to me\".",
+      "review": [
+        "Is any route in the wrong group?",
+        "Should any read route also be rate limited?"
+      ]
+    },
+    {
+      "id": "dfd-l0",
+      "file": "06-dfd-level0.mmd",
+      "title": "Data flow level 0 (context DFD)",
+      "group": "dataflow",
+      "type": "DFD level 0",
+      "status": "current",
+      "summary": "Beacon as a single process, with every external entity and every labelled flow F1–F9 crossing the trust boundary.",
+      "howToRead": "The dashed box is the trust boundary. Flows that cross it are the ones a security or privacy review cares about — especially F8, the only flow that leaves infrastructure you control, and F7, the only flow that changes someone else's system.",
+      "review": [
+        "Is F8 the minimum data that could possibly do the job?",
+        "Can F7 happen without a recorded human approval? (No — see diagram 13.)"
+      ]
+    },
+    {
+      "id": "dfd-l1",
+      "file": "07-dfd-level1.mmd",
+      "title": "Data flow level 1 (processes and stores)",
+      "group": "dataflow",
+      "type": "DFD level 1",
+      "status": "current",
+      "summary": "The nine numbered processes and four data stores, with every arrow labelled with what actually moves.",
+      "howToRead": "Follow 1 → 9 in order for a full cycle. Processes 7, 8 and 9 are red because they are the only ones that change stored state, and each has a human or a schedule behind it, never the agent on its own.",
+      "review": [
+        "Does every arrow into a store have an identified actor?",
+        "Is there any path from process 6 (raise signals) directly to process 8 (write back)? There must not be — 7 sits between them."
+      ]
+    },
+    {
+      "id": "dfd-l2-detection",
+      "file": "08-dfd-level2-detection.mmd",
+      "title": "Data flow level 2 — the detector",
+      "group": "dataflow",
+      "type": "DFD level 2",
+      "status": "current",
+      "summary": "Process 4 expanded: how a piece of update text becomes an explainable verdict, with or without a model.",
+      "howToRead": "The two boxes that carry the argument are \"normalize\" and \"fall back to the rules\". The model supplies phrases; the score is recomputed from them and the threshold is ours, so a model cannot assert a conclusion the evidence does not support.",
+      "review": [
+        "If the provider returned a confident verdict with no phrases, what score would it get? (Zero.)",
+        "Is there any path where a model failure reaches the user as an error? (No — it degrades to rules.)"
+      ]
+    },
+    {
+      "id": "event-sourcing",
+      "file": "09-event-sourcing.mmd",
+      "title": "How state is kept (base + decision log)",
+      "group": "dataflow",
+      "type": "flowchart",
+      "status": "current",
+      "summary": "A read-only base snapshot plus an append-only log of human decisions, folded by one reducer that both the server and the browser run.",
+      "howToRead": "Note which event kinds are in the upper box: only two of the eight can change an item. The rest are recorded because they are evidence about the agent's usefulness, not because they change the board.",
+      "review": [
+        "Could a signal decision silently change an item? (No.)",
+        "How is a mistake corrected? (A new event — event.undone — never by editing the log.)"
+      ]
+    },
+    {
+      "id": "privacy-boundary",
+      "file": "10-privacy-boundary.mmd",
+      "title": "Privacy boundary — what leaves, what never does",
+      "group": "dataflow",
+      "type": "flowchart",
+      "status": "current",
+      "summary": "Three columns: what stays in the viewer's browser, what stays in our store, and the short list that can leave for a model provider.",
+      "howToRead": "Read the \"never sent\" box as a specification, not a reassurance — it is what lib/llm/types.ts actually allows into a prompt. The default configuration sends nothing at all: with no key, the rule detector runs.",
+      "review": [
+        "Does anything in \"sent\" identify a person beyond a first name?",
+        "If a customer forbids external model calls, what changes? (One environment variable.)"
+      ]
+    },
+    {
+      "id": "degradation",
+      "file": "11-degradation.mmd",
+      "title": "Failure modes and graceful degradation",
+      "group": "dataflow",
+      "type": "decision flow",
+      "status": "current",
+      "summary": "Every branch for \"something is down\", each ending in a state that still works and is visible to an operator.",
+      "howToRead": "Follow any \"no\" branch to its end: none of them reaches a dead end. The point is that the model and the database are both optional in different ways — the model is optional by design, the database is optional with a stated downgrade.",
+      "review": [
+        "Which failures are silent? (None — each is logged or reported by /api/health.)",
+        "Is the file-store fallback ever chosen after Postgres has worked? (No — that would split the log.)"
+      ]
+    },
+    {
+      "id": "seq-agent-run",
+      "file": "12-seq-agent-run.mmd",
+      "title": "Sequence — one scheduled agent run",
+      "group": "behaviour",
+      "type": "sequence",
+      "status": "current",
+      "summary": "The clock triggers a run; the server loads the world, reads each item's language, computes, and records one run row.",
+      "howToRead": "Check what is missing: there is no arrow to the tracker and no item change. A run reads, computes and records. The loop shows the model call and its fallback side by side.",
+      "review": [
+        "What happens if a run takes longer than the interval? (Single flight — the next trigger joins it.)",
+        "Where does cost come from? (One model call per active item per run, which is why the route is rate limited.)"
+      ]
+    },
+    {
+      "id": "seq-hitl",
+      "file": "13-seq-human-in-the-loop.mmd",
+      "title": "Sequence — hidden blocker to approved change",
+      "group": "behaviour",
+      "type": "sequence",
+      "status": "current",
+      "summary": "The product's central claim as a single trace: detected wording → the author is asked first → a previewed proposal → an approval → the tracker.",
+      "howToRead": "Follow the happy path first, then the two alternatives. The \"no\" branch matters as much as the \"yes\": a dismissal is recorded with a reason, and a kind of signal that keeps being dismissed gets retuned rather than kept.",
+      "review": [
+        "Is the author ever bypassed? (No.)",
+        "Is an approval reversible, and is the reversal visible? (Yes — event.undone.)"
+      ]
+    },
+    {
+      "id": "seq-composer",
+      "file": "14-seq-update-composer.mmd",
+      "title": "Sequence — the one-field update composer",
+      "group": "behaviour",
+      "type": "sequence",
+      "status": "current",
+      "summary": "A person writes or dictates one note; the model tidies it or folds it with the thread; the person confirms every word before anything is posted.",
+      "howToRead": "Three nested fallbacks, each labelled with the `source` value the response carries: llm, rules, or rules-local. The UI shows which one produced the text, so the copy never claims a model ran when it did not.",
+      "review": [
+        "Can the model post anything by itself? (No.)",
+        "With the static export and no backend, do both buttons still work? (Yes — rules-local.)"
+      ]
+    },
+    {
+      "id": "state-item",
+      "file": "15-state-item.mmd",
+      "title": "State — the life of a work item",
+      "group": "behaviour",
+      "type": "state machine",
+      "status": "current",
+      "summary": "Every status an item can hold and every transition between them, with the scoring consequences of being blocked or overdue.",
+      "howToRead": "Each transition label names its cause, and every cause is a person. The two notes are the rules that make silence meaningful only where a daily update is actually expected.",
+      "review": [
+        "Is there a transition the agent could make alone? (No.)",
+        "Are risks and decisions nagged for daily updates? (No — see the second note.)"
+      ]
+    },
+    {
+      "id": "state-signal",
+      "file": "16-state-signal.mmd",
+      "title": "State — the life of a signal and its proposal",
+      "group": "behaviour",
+      "type": "state machine",
+      "status": "current",
+      "summary": "Open → accepted, dismissed or snoozed; and the nested lifecycle of the tracker change a signal proposes.",
+      "howToRead": "The nested box is a separate decision from the signal itself: you can accept that a problem is real and still reject the specific change proposed for it. The note explains how dismissals feed back into stated confidence.",
+      "review": [
+        "Does a snoozed signal disappear? (No — the next run re-raises it.)",
+        "What stops the agent repeating a settled signal? (The decision is in the log, and the run reads it.)"
+      ]
+    },
+    {
+      "id": "journey-roles",
+      "file": "17-journey-roles.mmd",
+      "title": "Journey — one day, by role",
+      "group": "behaviour",
+      "type": "user journey",
+      "status": "current",
+      "summary": "The same data through three lenses, as the sequence of things each role actually does in a day.",
+      "howToRead": "The scores are the intended experience for the person in that row, not a measurement. Read the manager section for what is deliberately absent: there is no per-person step anywhere in it.",
+      "review": [
+        "Is any step in the member row more than one interaction? (It should not be.)",
+        "Does the manager row ever reach an individual's record? (No.)"
+      ]
+    },
+    {
+      "id": "data-model",
+      "file": "18-data-model.mmd",
+      "title": "Data model today",
+      "group": "data",
+      "type": "ER diagram",
+      "status": "current",
+      "summary": "The entities and their tables: a base snapshot of what the tracker gave us, the append-only decision log, and the run log.",
+      "howToRead": "Look for what is NOT a column: there is no attention score, no signal and no confidence anywhere. Those are computed on read, which is what makes \"the score equals the sum of the reasons\" enforceable.",
+      "review": [
+        "Could any stored field drift out of agreement with a computed one?",
+        "Is anything in EVENT.payload that belongs in a column for querying?"
+      ]
+    },
+    {
+      "id": "deployment-now",
+      "file": "19-deployment-now.mmd",
+      "title": "Deployment today — three ways to run it",
+      "group": "ops",
+      "type": "deployment",
+      "status": "current",
+      "summary": "The public static export, the full local/WSL stack, and the container stack — with what each one genuinely can and cannot do.",
+      "howToRead": "The red box in the first column is the honest part: the public URL has no API, so no shared log, no live agent and no model calls. The other two columns are the real system.",
+      "review": [
+        "Is the limitation of the public demo visible to a visitor? (Yes — the privacy card names the live store.)",
+        "What is not automated yet? (The container image build.)"
+      ]
+    },
+    {
+      "id": "observability",
+      "file": "28-observability.mmd",
+      "title": "Observability — how you find out something is wrong",
+      "group": "ops",
+      "type": "flowchart",
+      "status": "mixed",
+      "summary": "What the system already emits (logs, run rows, health, adoption counters) and the phase-4 collection and alerting around it.",
+      "howToRead": "Left column is today; the purple middle is infrastructure a pilot adds. The right column is the useful part of this diagram: four alerts worth acting on, including one that is about the product being wrong rather than down.",
+      "review": [
+        "Could an operator diagnose a failed update without shell access? (Yes — requestId in the response and the log.)",
+        "Is there a metric that would catch the agent being annoying rather than broken? (Dismissal rate.)"
+      ]
+    },
+    {
+      "id": "threat-model",
+      "file": "27-threat-model.mmd",
+      "title": "Threat model — threat to control",
+      "group": "ops",
+      "type": "flowchart",
+      "status": "mixed",
+      "summary": "Seven threat classes, each paired with the control that answers it and where that control lives in the code.",
+      "howToRead": "Read right to left to audit: for each control, ask whether it is in the code today. One row is purple — spoofing — because there is no authentication yet. That gap is stated here rather than papered over.",
+      "review": [
+        "Is any control a document rather than code?",
+        "Which threat would you fix first for a pilot? (Spoofing — SSO plus server-side role checks.)"
+      ]
+    },
+    {
+      "id": "target-containers",
+      "file": "20-target-containers.mmd",
+      "title": "Target architecture (phases 4–5)",
+      "group": "future",
+      "type": "C4 container",
+      "status": "future",
+      "summary": "What a pilot and then an enterprise deployment add: SSO, a sync service, a job queue, Redis, audit/export, and metrics.",
+      "howToRead": "Everything solid exists today and is not replaced; every purple dashed box is new. The shape of the argument is that the brain and the API survive unchanged — what grows around them is infrastructure.",
+      "review": [
+        "Does anything purple require rewriting something solid?",
+        "Which purple box is required before two replicas can run? (Redis.)"
+      ]
+    },
+    {
+      "id": "dfd-two-way-sync",
+      "file": "21-dfd-two-way-sync.mmd",
+      "title": "Data flow — two-way tracker sync (phase 4)",
+      "group": "future",
+      "type": "DFD level 1",
+      "status": "future",
+      "summary": "How tracker changes come in and approved changes go out: four mapped fields, an approval gate, an idempotent outbox, and an explicit conflict path.",
+      "howToRead": "Follow 1 → 9, then look at 10. The conflict branch is the design decision worth reviewing: when the tracker changed under us, Beacon re-raises it for a person instead of overwriting.",
+      "review": [
+        "Is this a mirror? (No — four fields, deliberately.)",
+        "What stops a double write after a retry? (An idempotency key per change.)"
+      ]
+    },
+    {
+      "id": "seq-webhook",
+      "file": "22-seq-webhook-writeback.mmd",
+      "title": "Sequence — webhook in, approved write out (phase 4)",
+      "group": "future",
+      "type": "sequence",
+      "status": "future",
+      "summary": "A tracker edit triggers a scoped run; an approved change is written back only after re-checking that the issue has not moved.",
+      "howToRead": "Two guards carry this diagram: deduplication at the receiver (so a burst of edits is not a burst of model calls) and the cursor re-check before writing (so nothing is silently overwritten).",
+      "review": [
+        "What happens to a conflict? (It goes back to the person with both versions.)",
+        "Is the write labelled in the tracker? (Yes — AI-assisted.)"
+      ]
+    },
+    {
+      "id": "deployment-target",
+      "file": "23-deployment-target.mmd",
+      "title": "Deployment target (pilot and enterprise)",
+      "group": "future",
+      "type": "deployment",
+      "status": "future",
+      "summary": "A single-tenant, single-region topology: ingress, two app replicas, a worker pool, managed Postgres, Redis, a secret manager, and observability.",
+      "howToRead": "The note at the bottom is the part that changes code rather than infrastructure: the rate limiter and the run lock are in-process today, so they must move to Redis before a second replica is honest.",
+      "review": [
+        "What breaks first if you scale to two replicas without Redis?",
+        "Where does a data-residency customer diverge? (A self-hosted model.)"
+      ]
+    },
+    {
+      "id": "identity-model",
+      "file": "25-identity-model.mmd",
+      "title": "Identity, roles and erasure (phase 4)",
+      "group": "future",
+      "type": "class diagram",
+      "status": "future",
+      "summary": "The model that replaces today's trusted `actor` string: tenants, users linked to an SSO subject, memberships, and an explicit permission set.",
+      "howToRead": "The two notes are the substance. The permissions list is what each role may do; the user note explains why erasure is pseudonymisation of the actor rather than deletion of events — and why it needs sign-in first.",
+      "review": [
+        "Does the manager role hold any permission that could reach an individual?",
+        "After pseudonymisation, is the audit trail still complete? (Yes — the decision survives, the identity does not.)"
+      ]
+    },
+    {
+      "id": "data-model-future",
+      "file": "26-data-model-future.mmd",
+      "title": "Data model additions (phases 4–5)",
+      "group": "future",
+      "type": "ER diagram",
+      "status": "future",
+      "summary": "The new tables: tenancy and users, per-item sync state, an idempotent outbox, KB embeddings, and a daily snapshot row.",
+      "howToRead": "Compare with diagram 18: nothing existing changes shape, which is why this is additive rather than a migration. SNAPSHOT_DAY is the one that unlocks an honest burndown and cycle time — today's charts only draw the days they really have.",
+      "review": [
+        "Is any new table duplicating something computable? (It should not be.)",
+        "Why store a daily snapshot at all? (A real burndown cannot be reconstructed from current state.)"
+      ]
+    },
+    {
+      "id": "roadmap",
+      "file": "24-roadmap.mmd",
+      "title": "Roadmap — phases 1 to 5",
+      "group": "future",
+      "type": "gantt",
+      "status": "mixed",
+      "summary": "What is done, what is in progress, and what a pilot would take. Dates for phases 1–3 are when the work happened.",
+      "howToRead": "Read the bar colours, not the calendar: phases 1–3 are complete, and the phase 4–5 bars are sized estimates for a pilot, not commitments. The hardening bar on 14 October is the work covered by docs/PRODUCTION-READINESS.md.",
+      "review": [
+        "Is anything claimed as done that the tests do not cover?",
+        "Which phase-4 item unblocks the most others? (SSO and server-side roles.)"
+      ]
+    }
+  ]
+}

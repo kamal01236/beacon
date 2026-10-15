@@ -1,0 +1,34 @@
+%% FUTURE (phase 4) - a tracker change arrives, and a change goes back. The
+%% approval gate and the conflict check are the two things that make write-back
+%% safe to switch on for a real team.
+sequenceDiagram
+  autonumber
+  participant TR as Jira / Azure DevOps
+  participant WH as Webhook receiver
+  participant Q as Job queue
+  participant BE as Beacon run
+  participant SA as Facilitator
+  participant OB as Outbox
+
+  TR->>WH: issue updated (signed payload)
+  WH->>WH: verify the signature and dedupe on the delivery id
+  WH->>Q: enqueue "re-analyse REQ-001"
+  Note over WH,Q: a burst of 50 edits becomes a few jobs, not 50 model calls
+  Q->>BE: event-triggered run, scoped to the touched items
+  BE->>BE: facts, score, signals (the same brain, unchanged)
+  BE->>SA: signal and proposal preview, with the evidence
+  alt approved
+    SA->>OB: approve, optionally after editing the text
+    OB->>TR: read the issue again. Is our cursor still current?
+    alt unchanged
+      OB->>TR: transition, comment or priority, labelled AI-assisted
+      TR-->>OB: accepted, with the new version
+      OB->>OB: record it as sent, with the tracker id and the event id
+    else changed under us
+      OB--xSA: conflict. Here is what you approved and what it says now
+      Note over OB,SA: never overwritten silently
+    end
+  else rejected
+    SA->>OB: reject, with a reason
+    Note over SA,OB: recorded in the decision log and nothing is sent
+  end

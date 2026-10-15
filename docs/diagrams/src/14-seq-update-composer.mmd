@@ -1,0 +1,31 @@
+%% The single-field update composer: one box a person types or dictates into.
+%% Both buttons always produce something, with or without a backend.
+sequenceDiagram
+  autonumber
+  participant P as Person
+  participant UI as Composer (browser)
+  participant API as POST /api/agent/summarize
+  participant SA as Server agent
+  participant M as Model provider
+
+  P->>UI: one free-text note (typed or dictated)
+  P->>UI: press "Clean up" or "Summarize"
+  UI->>API: itemId, mode, raw text, the agent seed
+  alt a backend is present and a model is configured
+    API->>SA: validated body
+    SA->>M: cleanup, or summarize with the recent thread
+    alt the model answers
+      M-->>SA: text, proposedStatus, questions
+      SA->>SA: drop a status outside the allowed set and cap the questions
+      SA-->>UI: source is llm, with the provider and model named
+    else the model errors or returns nothing
+      SA-->>UI: source is rules (deterministic cleanup)
+    end
+  else no backend (static export) or the request fails
+    UI->>UI: local cleanup in the browser
+    Note over UI: source is rules-local, so the copy never claims a model ran
+  end
+  UI-->>P: the proposed update, fully editable
+  P->>UI: confirm and post
+  UI->>API: POST /api/events with update.posted
+  Note over P,API: the model never posts anything. A person confirms every word

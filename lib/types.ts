@@ -15,6 +15,29 @@ export type ItemStatus =
   | "monitoring"
   | "cancelled";
 
+// The same unions at runtime, so the API boundary can reject a status or type
+// the domain does not have (lib/validate.ts). Declared as Records keyed by the
+// union so adding a member to the type and forgetting it here fails the build.
+const ITEM_STATUS_MAP: Record<ItemStatus, true> = {
+  todo: true,
+  in_progress: true,
+  blocked: true,
+  done: true,
+  overdue: true,
+  spillover: true,
+  confirmed: true,
+  resolved: true,
+  monitoring: true,
+  cancelled: true,
+};
+export const ITEM_STATUSES = Object.keys(ITEM_STATUS_MAP) as ItemStatus[];
+
+const ITEM_TYPE_MAP: Record<ItemType, true> = { requirement: true, action: true, decision: true, risk: true };
+export const ITEM_TYPES = Object.keys(ITEM_TYPE_MAP) as ItemType[];
+
+const ROLE_MAP: Record<Role, true> = { facilitator: true, manager: true, member: true };
+export const ROLES = Object.keys(ROLE_MAP) as Role[];
+
 export interface Member {
   id: string;
   name: string;

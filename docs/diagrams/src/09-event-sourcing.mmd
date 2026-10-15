@@ -1,0 +1,41 @@
+%% How state is kept: a fixed base snapshot plus an append-only log of human
+%% decisions. Nothing else can change what a screen shows.
+flowchart LR
+  BASE[("<b>base snapshot</b><br/>what the tracker gave us<br/><i>read-only</i>")]
+  LOG[("<b>decision log</b><br/>append-only, one row per decision<br/>id - time - actor - kind - payload")]
+  REDUCE["<b>buildWorldFrom(base, events)</b><br/>the SAME reducer in the browser<br/>and on the server"]
+  WORLD["<b>the world</b><br/>items + updates + effective events<br/><i>what every screen renders</i>"]
+
+  subgraph changes["Only two event kinds change an item"]
+    direction TB
+    U["update.posted<br/><i>a person's own update</i>"]
+    A["proposal.decided + approved<br/><i>a change a human approved</i>"]
+  end
+
+  subgraph norecord["Recorded, but they change nothing"]
+    direction TB
+    S["signal.decided"]
+    F["feedback.given"]
+    R["retro.adopted"]
+  end
+
+  UNDO["event.undone<br/><i>cancels an earlier event;<br/>both stay in the log</i>"]
+  RET["data.retained / data.reset<br/><i>the only non-append operations -<br/>each records itself into the log</i>"]
+
+  BASE --> REDUCE
+  LOG --> REDUCE
+  REDUCE --> WORLD
+  changes -->|"applied"| REDUCE
+  norecord -.->|"read by adoption metrics<br/>and confidence calibration"| REDUCE
+  UNDO -->|"filtered out by effective()"| REDUCE
+  RET --> LOG
+
+  classDef core fill:#0E6A6A,stroke:#07403F,color:#FFFFFF
+  classDef inproc fill:#E6F0F0,stroke:#0E6A6A,color:#0B3B3B
+  classDef store fill:#FDF4E3,stroke:#B4761A,color:#5C3A06
+  classDef gate fill:#FFF0F0,stroke:#B3261E,color:#5C100B
+  class BASE,LOG store
+  class REDUCE core
+  class WORLD inproc
+  class U,A,S,F,R inproc
+  class UNDO,RET gate

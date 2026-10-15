@@ -5,21 +5,30 @@
 // returned verbatim if no model is configured or it errors, so the approve UI
 // always has an editable comment. Writes nothing — the human still approves.
 // The static Pages export omits it, so the browser keeps the rule template.
+//
+// Rate limited: this is one of the three routes that can call a paid model.
 
-import { NextResponse } from "next/server";
+import { ok, route, LLM_RATE_LIMIT } from "@/lib/server/http";
 import { composeComment } from "@/lib/server/agent";
+import { object, parseBody, str, text, nullable } from "@/lib/validate";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function POST(req: Request) {
-  try {
-    const body = (await req.json()) as { itemId?: string; intent?: string; fallback?: string; audience?: string | null };
-    if (!body?.itemId || typeof body.intent !== "string" || typeof body.fallback !== "string") {
-      return NextResponse.json({ error: "Expected { itemId, intent, fallback }" }, { status: 400 });
-    }
-    return NextResponse.json(await composeComment(body.itemId, body.intent, body.fallback, body.audience ?? null));
-  } catch (err) {
-    return NextResponse.json({ error: String(err instanceof Error ? err.message : err) }, { status: 500 });
-  }
-}
+const Body = object<{ itemId: string; intent: string; fallback: string; audience: string | null }>({
+  itemId: str({ max: 64, pattern: /^[A-Za-z0-9._:-]+$/ }),
+  intent: str({ max: 500 }),
+  // The rule template. Required: without it there is nothing to fall back to,
+  // and a comment proposal with no approvable text is not a proposal.
+  fallback: text(2_000),
+  audience: nullable(str({ max: 64, pattern: /^[A-Za-z0-9 ._-]+$/ })),
+});
+
+export const POST = route(
+  "POST /api/agent/compose",
+  async ({ req }) => {
+    const body = await parseBody(req, Body);
+    return ok(await composeComment(body.itemId, body.intent, body.fallback, body.audience));
+  },
+  { limit: LLM_RATE_LIMIT },
+);

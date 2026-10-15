@@ -1,0 +1,78 @@
+# Beacon, the whole stack, for a pilot or a reviewer with Docker.
+#
+#   docker compose up --build        the app, the database and the agent worker
+#   docker compose run --rm seed     load /data into Postgres (once)
+#   docker compose logs -f agent     watch the clock trigger runs
+#
+# The app and the agent are the SAME image with different commands, so they can
+# never run different versions of the brain. See docs/OPERATIONS.md.
+#
+# Your model key goes in .env.local (gitignored) — never in this file.
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_PASSWORD: beacon
+      POSTGRES_DB: beacon
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d beacon"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  app:
+    build:
+      context: .
+      args:
+        BEACON_COMMIT: ${BEACON_COMMIT:-unknown}
+    ports:
+      - "${BEACON_PORT:-3000}:3000"
+    environment:
+      DATABASE_URL: postgres://postgres:beacon@db:5432/beacon
+      BEACON_LOG_FORMAT: json
+      # Read from .env.local if present; absent is valid — Beacon runs on rules.
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      BEACON_LLM_PROVIDER: ${BEACON_LLM_PROVIDER:-}
+      BEACON_DETECTOR: ${BEACON_DETECTOR:-}
+    env_file:
+      - path: .env.local
+        required: false
+    volumes:
+      # The no-database fallback log. Harmless with a database configured, and
+      # the difference between keeping and losing the log without one.
+      - app-data:/app/.data
+    depends_on:
+      db:
+        condition: service_healthy
+
+  agent:
+    build:
+      context: .
+    command: ["node", "agent/run.mjs"]
+    environment:
+      BEACON_URL: http://app:3000
+      BEACON_AGENT_INTERVAL_MINS: ${BEACON_AGENT_INTERVAL_MINS:-60}
+      BEACON_QUIET_HOURS: ${BEACON_QUIET_HOURS:-}
+    depends_on:
+      app:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # One-shot: load the base snapshot into Postgres. Not part of `up`.
+  seed:
+    build:
+      context: .
+    profiles: ["tools"]
+    command: ["node", "scripts/seed-db.mjs"]
+    environment:
+      DATABASE_URL: postgres://postgres:beacon@db:5432/beacon
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  db-data:
+  app-data:

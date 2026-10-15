@@ -1,0 +1,50 @@
+%% Deployment as it is today. Three ways to run the same codebase, and what each
+%% one can actually do. The differences are honest, not hidden.
+flowchart TB
+  subgraph pages["1 - GitHub Pages (live, public)"]
+    direction TB
+    PGS["Static export, BUILD_TARGET=pages<br/>every screen, the full brain in the browser"]
+    PGSL[("decisions in localStorage<br/><i>this browser only</i>")]
+    PGSN["<b>no /api</b>, so: no shared log,<br/>no live agent, no model calls"]
+    PGS --> PGSL
+    PGS --- PGSN
+  end
+
+  subgraph local["2 - Local / WSL (full stack)"]
+    direction TB
+    NEXT["next build + next start<br/>UI + /api + the brain"]
+    WK["agent worker on a cadence"]
+    ST[(".data/*.json<br/>or Postgres if DATABASE_URL is set")]
+    WK -->|"POST /api/agent/run"| NEXT
+    NEXT --> ST
+  end
+
+  subgraph container["3 - Container (docker compose)"]
+    direction TB
+    APPC["app: node server.js<br/>health check on /api/health"]
+    AGC["agent: node agent/run.mjs<br/><i>same image, different command</i>"]
+    PGC[("postgres:16<br/>volume db-data")]
+    VOL[("volume app-data<br/>mounted at /app/.data")]
+    AGC -->|"POST /api/agent/run"| APPC
+    APPC --> PGC
+    APPC --> VOL
+  end
+
+  CI["GitHub Actions<br/><b>CI</b>: typecheck, lint, secrets,<br/>diagram check, tests, BOTH builds"]
+  CI -->|"on main, after verify"| PGS
+  CI -.->|"image build is manual today"| container
+
+  MODELX["OpenAI API<br/><i>only if a key is configured</i>"]
+  NEXT -.-> MODELX
+  APPC -.-> MODELX
+
+  classDef core fill:#0E6A6A,stroke:#07403F,color:#FFFFFF
+  classDef inproc fill:#E6F0F0,stroke:#0E6A6A,color:#0B3B3B
+  classDef store fill:#FDF4E3,stroke:#B4761A,color:#5C3A06
+  classDef external fill:#F2F3F5,stroke:#8A93A0,color:#2A2F38,stroke-dasharray:4 3
+  classDef gate fill:#FFF0F0,stroke:#B3261E,color:#5C100B
+  class PGS,NEXT,APPC core
+  class WK,AGC,CI inproc
+  class PGSL,ST,PGC,VOL store
+  class MODELX external
+  class PGSN gate

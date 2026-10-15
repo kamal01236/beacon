@@ -1,0 +1,58 @@
+%% FUTURE (phase 4) - identity, roles and what each role may do. Today `actor`
+%% is a trusted string from the client; this is the model that replaces it, and
+%% it is also what makes erasure answerable.
+classDiagram
+  class Tenant {
+    +id
+    +name
+    +region "phase 5 - data residency"
+    +retentionDays "overrides the default 180"
+  }
+  class User {
+    +id
+    +tenantId
+    +externalSubject "the OIDC sub - the only identity link"
+    +displayName
+    +email
+    +status "active | pseudonymised"
+    +pseudonymise() "keeps the decision, drops the person"
+  }
+  class Team {
+    +id
+    +tenantId
+    +trackerProjectKey
+  }
+  class Membership {
+    +userId
+    +teamId
+    +role "facilitator | manager | member"
+  }
+  class Permission {
+    <<enumeration>>
+    READ_OWN_WORK
+    READ_TEAM_BOARD
+    READ_AGGREGATE_ONLY
+    DECIDE_SIGNAL
+    APPROVE_TRACKER_WRITE
+    POST_OWN_UPDATE
+    EXPORT_OWN_DATA
+    EXPORT_TEAM_LOG
+    RESET_INSTANCE
+  }
+  class Event {
+    +id
+    +at
+    +actorUserId "verified, not claimed"
+    +kind
+    +payload
+  }
+
+  Tenant "1" --> "many" User
+  Tenant "1" --> "many" Team
+  User "1" --> "many" Membership
+  Team "1" --> "many" Membership
+  Membership --> Permission : grants
+  User "1" --> "many" Event : acted
+
+  note for Membership "member: own work + team board, post own updates\nfacilitator: decide signals, approve writes, export team log\nmanager: AGGREGATE ONLY - never per-person performance"
+  note for User "Erasure pseudonymises the actor rather than deleting\nevents: the decision survives for audit, the identity\ndoes not. This needs sign-in to know who is asking,\nwhich is why it is phase 4 and stated, not claimed."

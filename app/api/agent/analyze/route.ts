@@ -4,22 +4,30 @@
 // answer, the phrases behind it, and which detector ran. Writes nothing — this
 // informs the person before they post an update or approve a change. The static
 // Pages export omits it, so the browser falls back to the local rule detector.
+//
+// Rate limited: this is one of the three routes that can call a paid model.
 
-import { NextResponse } from "next/server";
+import { ok, route, LLM_RATE_LIMIT } from "@/lib/server/http";
 import { analyzeDraft } from "@/lib/server/agent";
-import type { ItemStatus } from "@/lib/types";
+import { ITEM_STATUSES, type ItemStatus } from "@/lib/types";
+import { object, parseBody, str, text, nullable, oneOf } from "@/lib/validate";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function POST(req: Request) {
-  try {
-    const body = (await req.json()) as { itemId?: string; text?: string; status?: ItemStatus };
-    if (!body?.itemId || typeof body.text !== "string") {
-      return NextResponse.json({ error: "Expected { itemId, text }" }, { status: 400 });
-    }
-    return NextResponse.json(await analyzeDraft(body.itemId, body.text, body.status));
-  } catch (err) {
-    return NextResponse.json({ error: String(err instanceof Error ? err.message : err) }, { status: 500 });
-  }
-}
+const Body = object<{ itemId: string; text: string; status: ItemStatus | null }>({
+  itemId: str({ max: 64, pattern: /^[A-Za-z0-9._:-]+$/ }),
+  // An update can legitimately be long prose; 4 KB is far more than a stand-up
+  // note and keeps the prompt (and its cost) bounded.
+  text: text(4_000),
+  status: nullable(oneOf(ITEM_STATUSES)),
+});
+
+export const POST = route(
+  "POST /api/agent/analyze",
+  async ({ req }) => {
+    const body = await parseBody(req, Body);
+    return ok(await analyzeDraft(body.itemId, body.text, body.status ?? undefined));
+  },
+  { limit: LLM_RATE_LIMIT },
+);

@@ -1,0 +1,41 @@
+%% FUTURE (phase 4) - data flow for two-way tracker sync. Deliberately NOT a
+%% mirror: four fields move, in a stated direction, through one approval gate.
+flowchart TB
+  TRK(["Jira / Azure DevOps"])
+  WH["<b>1 Webhook receiver</b><br/>verify signature, dedupe by delivery id"]
+  PULL["<b>2 Poll fallback</b><br/>JQL / WIQL since last cursor"]
+  MAP["<b>3 Field mapping</b><br/>status - priority - blocker flag - comments"]
+  UPS["<b>4 Upsert base snapshot</b><br/>with a change cursor per item"]
+  RUN["<b>5 Re-analyse the touched items</b><br/>event-triggered run"]
+  GATE{"<b>6 Approval gate</b><br/>a human approves the<br/>preview, or it is not sent"}
+  OUT["<b>7 Outbox</b><br/>idempotency key per change,<br/>retry with backoff"]
+  CONF{"<b>8 Still current?</b><br/>compare the cursor we read<br/>with what the tracker has now"}
+  WRITE["<b>9 Write</b><br/>transition, comment, priority, flag<br/>labelled AI-assisted"]
+  CONFLICT["<b>10 Conflict</b><br/>do not overwrite - re-raise<br/>for a person with both versions"]
+
+  D1[("D1 base snapshot<br/>+ sync cursor")]
+  D2[("D2 decision log<br/>append-only")]
+  D5[("D5 outbox<br/>pending, sent, failed")]
+
+  TRK -->|"issue updated"| WH --> MAP
+  TRK -->|"missed events"| PULL --> MAP
+  MAP --> UPS --> D1
+  UPS --> RUN
+  RUN -->|"signals + proposals"| GATE
+  GATE -->|"approved"| OUT
+  GATE -->|"rejected - recorded, nothing sent"| D2
+  OUT --> D5
+  OUT --> CONF
+  CONF -->|"yes"| WRITE --> TRK
+  CONF -->|"no - changed under us"| CONFLICT --> GATE
+  WRITE -->|"result + tracker id"| D2
+
+  classDef core fill:#0E6A6A,stroke:#07403F,color:#FFFFFF
+  classDef store fill:#FDF4E3,stroke:#B4761A,color:#5C3A06
+  classDef external fill:#F2F3F5,stroke:#8A93A0,color:#2A2F38,stroke-dasharray:4 3
+  classDef gate fill:#FFF0F0,stroke:#B3261E,color:#5C100B
+  classDef future fill:#F3EEFB,stroke:#6B46C1,color:#32225E,stroke-dasharray:5 3
+  class TRK external
+  class WH,PULL,MAP,UPS,RUN,OUT,WRITE future
+  class GATE,CONF,CONFLICT gate
+  class D1,D2,D5 store

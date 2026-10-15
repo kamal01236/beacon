@@ -1,0 +1,31 @@
+%% The life of one agent signal, and how the team's own decisions feed back into
+%% how confident the next one is allowed to sound.
+stateDiagram-v2
+  direction TB
+  [*] --> raised: a run finds evidence
+  raised --> open: shown with evidence, source and confidence
+
+  open --> accepted: facilitator accepts
+  open --> dismissed: facilitator dismisses, with a reason
+  open --> snoozed: not now
+  snoozed --> open: the next run re-raises it
+  accepted --> [*]
+  dismissed --> [*]
+
+  state proposal {
+    [*] --> pending: written as one approvable line
+    pending --> approved: a human approves
+    pending --> rejected: a human rejects
+    approved --> applied: the item changes and the event is logged
+    applied --> undone: event.undone reverses it
+  }
+
+  open --> proposal: the signal proposes a tracker change
+
+  note right of dismissed
+    Dismissals are counted per signal kind.
+    After 3 decisions, stated confidence becomes
+    the average of the prior and the observed
+    accept rate. Above 30 percent dismissal the
+    detector is retuned rather than ignored.
+  end note

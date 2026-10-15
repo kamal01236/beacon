@@ -1,0 +1,43 @@
+%% C4 level 2 - Containers. The processes and stores that make up Beacon today.
+flowchart TB
+  BROWSER["<b>Browser</b><br/>React screens (Next App Router)<br/>reads the world, records decisions"]
+
+  subgraph proc["<b>Next.js server process</b> (one container)"]
+    direction TB
+    API["<b>/api route handlers</b><br/>validate - rate limit - log - no-store<br/>one error envelope"]
+    BRAIN["<b>The brain</b> lib/<br/>facts, attention score, detector,<br/>signals, insights<br/><i>pure and synchronous - no I/O</i>"]
+    STOREAD["<b>Store adapter</b> lib/server/store.ts<br/>picks the backend, folds base + events"]
+    LLMAD["<b>Model adapter</b> lib/llm/<br/>deadline, bounded retries,<br/>fallback to the rules"]
+  end
+
+  WORKER["<b>Agent worker</b> agent/run.mjs<br/><i>the clock only</i> - triggers a run<br/>on a cadence, on an event, or on demand"]
+
+  PG[("<b>Postgres</b><br/>items - updates - events - agent_runs")]
+  FILES[(".data/*.json<br/><b>no-database fallback</b><br/>atomic writes, quarantine on corruption")]
+  SEED[("data/*.json<br/>base snapshot (the fixed export)")]
+
+  JIRAAD["<b>Faked Jira adapter</b><br/>lib/server/jira.ts<br/>same shape as GET /rest/api/3/search"]
+  PROVIDER["OpenAI API<br/>or local Ollama"]
+
+  BROWSER -->|"GET /api/world, /api/base<br/>POST /api/events"| API
+  WORKER -->|"POST /api/agent/run"| API
+  API --> BRAIN
+  API --> STOREAD
+  API --> LLMAD
+  LLMAD -->|"HTTPS, one item thread"| PROVIDER
+  STOREAD -->|"when DATABASE_URL is set and reachable"| PG
+  STOREAD -->|"otherwise"| FILES
+  STOREAD -->|"base snapshot"| JIRAAD
+  JIRAAD --> SEED
+  BRAIN -.->|"verdicts installed as<br/>a detection override"| LLMAD
+
+  classDef client fill:#0F2A4A,stroke:#07192E,color:#FFFFFF
+  classDef core fill:#0E6A6A,stroke:#07403F,color:#FFFFFF
+  classDef inproc fill:#E6F0F0,stroke:#0E6A6A,color:#0B3B3B
+  classDef store fill:#FDF4E3,stroke:#B4761A,color:#5C3A06
+  classDef external fill:#F2F3F5,stroke:#8A93A0,color:#2A2F38,stroke-dasharray:4 3
+  class BROWSER client
+  class API,WORKER core
+  class BRAIN,STOREAD,LLMAD,JIRAAD inproc
+  class PG,FILES,SEED store
+  class PROVIDER external

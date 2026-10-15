@@ -1,0 +1,56 @@
+%% Data flow diagram, level 1. Numbered processes, lettered data stores, and
+%% every arrow labelled with what actually moves. Follow 1 to 9 in order.
+flowchart TB
+  TRACKER(["Jira / Azure DevOps"])
+  MEMBER(["Team member"])
+  FACIL(["Facilitator"])
+  PROVIDER(["Model provider<br/><i>optional</i>"])
+
+  P1["<b>1 Ingest</b><br/>fetch and adapt tracker issues<br/>lib/server/jira.ts"]
+  P2["<b>2 Fold the world</b><br/>base snapshot + decisions<br/>lib/world.ts"]
+  P3["<b>3 Derive facts</b><br/>dates, cadence, dependencies<br/>lib/facts.ts"]
+  P4["<b>4 Read the language</b><br/>rules, or the model, or both<br/>lib/detect.ts + lib/llm"]
+  P5["<b>5 Score attention</b><br/>14 rules, reasons that sum<br/>lib/priorityScore.ts"]
+  P6["<b>6 Raise signals</b><br/>+ questions + proposals<br/>lib/agent.ts"]
+  P7["<b>7 Record the decision</b><br/>append one event<br/>POST /api/events"]
+  P8["<b>8 Write back</b><br/>only an approved change<br/><i>simulated outbox today</i>"]
+  P9["<b>9 Age out</b><br/>retention sweep on a schedule<br/>POST /api/data/retention"]
+
+  D1[("<b>D1</b> base snapshot<br/>items, updates")]
+  D2[("<b>D2</b> decision log<br/>append-only events")]
+  D3[("<b>D3</b> run log<br/>one row per agent run")]
+  D4[("<b>D4</b> knowledge base<br/>runbooks + authors")]
+
+  TRACKER -->|"issues, status, comments"| P1
+  P1 -->|"items + updates"| D1
+  D1 --> P2
+  D2 -->|"effective events"| P2
+  P2 -->|"the world"| P3
+  P3 -->|"latest update text"| P4
+  P4 -->|"verdict + phrases"| P3
+  PROVIDER -->|"structured verdict"| P4
+  P4 -->|"item thread, first names only"| PROVIDER
+  P3 -->|"facts"| P5
+  P5 -->|"score + reasons"| P6
+  P3 -->|"facts"| P6
+  D4 -->|"matching runbook"| P6
+  P6 -->|"signals + evidence"| FACIL
+  P6 -->|"the question to answer"| MEMBER
+  MEMBER -->|"their own update"| P7
+  FACIL -->|"accept / dismiss / approve"| P7
+  P7 -->|"one event, with actor and time"| D2
+  P6 -->|"run snapshot"| D3
+  D2 -->|"approved proposals + own updates"| P8
+  P8 -->|"status, comment, blocker flag"| TRACKER
+  P9 -->|"delete past the window,<br/>then record that it happened"| D2
+
+  classDef person fill:#0F2A4A,stroke:#07192E,color:#FFFFFF
+  classDef core fill:#0E6A6A,stroke:#07403F,color:#FFFFFF
+  classDef store fill:#FDF4E3,stroke:#B4761A,color:#5C3A06
+  classDef external fill:#F2F3F5,stroke:#8A93A0,color:#2A2F38,stroke-dasharray:4 3
+  classDef gate fill:#FFF0F0,stroke:#B3261E,color:#5C100B
+  class MEMBER,FACIL person
+  class TRACKER,PROVIDER external
+  class P1,P2,P3,P4,P5,P6 core
+  class P7,P8,P9 gate
+  class D1,D2,D3,D4 store

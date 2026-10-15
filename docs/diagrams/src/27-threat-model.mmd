@@ -1,0 +1,39 @@
+%% Threat model, control by control. Green = in place today. Purple dashed =
+%% phase 4. Read each row as "threat - what stops it - where it lives".
+flowchart LR
+  subgraph threats["Threat"]
+    direction TB
+    T1["Spoofing<br/>anyone can claim to be anyone"]
+    T2["Tampering<br/>audit log edited or truncated"]
+    T3["Repudiation<br/>'I never approved that'"]
+    T4["Information disclosure<br/>data reaching a model, or a log"]
+    T5["Denial of service<br/>or a runaway model bill"]
+    T6["Elevation of privilege<br/>a manager seeing individuals"]
+    T7["Injection<br/>hostile input through the API"]
+  end
+
+  subgraph controls["Control"]
+    direction TB
+    C1["<b>phase 4</b>: SSO, server-side role checks.<br/><i>Today: actor is a trusted string -<br/>stated as a gap, not hidden</i>"]
+    C2["append-only log; only retention and<br/>instance reset remove rows, and each<br/>records itself; atomic file writes;<br/>corrupt files quarantined, never overwritten"]
+    C3["every decision carries actor + time + payload;<br/>undo is a new event, not a deletion"]
+    C4["first names only to the model; one item thread;<br/>no decision log sent; secrets redacted from logs;<br/>errors not echoed in production; rules-only default"]
+    C5["per-route rate limits; single-flight runs;<br/>per-attempt and total deadlines on model calls;<br/>body size caps; retries bounded"]
+    C6["manager view is aggregate by construction:<br/>People is not in the manager nav and<br/>per-person detail returns a team-only note"]
+    C7["schema validation on every route; unknown keys<br/>dropped; ids pattern-checked; parameterised SQL;<br/>CSP, nosniff, frame-ancestors none"]
+  end
+
+  T1 --> C1
+  T2 --> C2
+  T3 --> C3
+  T4 --> C4
+  T5 --> C5
+  T6 --> C6
+  T7 --> C7
+
+  classDef core fill:#0E6A6A,stroke:#07403F,color:#FFFFFF
+  classDef gate fill:#FFF0F0,stroke:#B3261E,color:#5C100B
+  classDef future fill:#F3EEFB,stroke:#6B46C1,color:#32225E,stroke-dasharray:5 3
+  class T1,T2,T3,T4,T5,T6,T7 gate
+  class C2,C3,C4,C5,C6,C7 core
+  class C1 future

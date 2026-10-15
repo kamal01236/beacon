@@ -1,0 +1,40 @@
+%% What leaves the process, and what never does. Read the three columns as
+%% "stays in this browser", "stays in our store", "leaves our infrastructure".
+flowchart TB
+  subgraph browser["Stays in the viewer's own browser"]
+    direction TB
+    PREF["theme, density, nav rail<br/><i>never part of the team record</i>"]
+    LOCAL["the decision log, WHEN there is no backend<br/><i>static Pages export: localStorage only</i>"]
+  end
+
+  subgraph ours["Stays in our store"]
+    direction TB
+    ITEMS["items, updates, statuses, blockers"]
+    EVENTS["decision log: actor, time, kind, payload"]
+    RUNS["run snapshots, detector + model used"]
+    KBART["runbooks and their authors"]
+  end
+
+  subgraph leaves["Leaves our infrastructure - model provider only"]
+    direction TB
+    SENT["<b>sent</b><br/>item code and title<br/>status, priority, days to due<br/>owner FIRST NAME only<br/>last 5 updates of THAT item"]
+    NEVER["<b>never sent</b><br/>email addresses - full names<br/>other people's items<br/>the decision log<br/>client or project identifiers<br/>anything from another sprint"]
+  end
+
+  CHOICE{"BEACON_LLM_PROVIDER"}
+  CHOICE -->|"openai"| SENT
+  CHOICE -->|"ollama (on your own machine)"| ONPREM["nothing leaves the machine"]
+  CHOICE -->|"none - the default"| RULESONLY["nothing leaves the process;<br/>the rule detector runs"]
+
+  ours --> CHOICE
+
+  classDef client fill:#0F2A4A,stroke:#07192E,color:#FFFFFF
+  classDef store fill:#FDF4E3,stroke:#B4761A,color:#5C3A06
+  classDef core fill:#0E6A6A,stroke:#07403F,color:#FFFFFF
+  classDef gate fill:#FFF0F0,stroke:#B3261E,color:#5C100B
+  class PREF,LOCAL client
+  class ITEMS,EVENTS,RUNS,KBART store
+  class SENT gate
+  class NEVER gate
+  class CHOICE core
+  class ONPREM,RULESONLY core

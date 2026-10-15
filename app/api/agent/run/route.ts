@@ -5,30 +5,56 @@
 //   GET  : the last few recorded runs, newest first, so the Agent screen can
 //          show a REAL run (when it happened, which detector and model ran)
 //          instead of a nominal one derived from the frozen demo clock.
+//
+// A run scans every active item and may call the model once per item, so it is
+// the most expensive thing this service does. Two guards:
+//   • SINGLE FLIGHT — a run already in progress is joined rather than started
+//     again, so "Run now" clicked three times is one run, and the worker's
+//     cadence cannot overlap itself when a run takes longer than the interval.
+//   • RATE LIMIT — bounded triggers per minute per caller.
 
-import { NextResponse } from "next/server";
-import { runAgent, type RunTrigger } from "@/lib/server/agent";
+import { ok, route, LLM_RATE_LIMIT } from "@/lib/server/http";
+import { runAgent, type RunResult, type RunTrigger } from "@/lib/server/agent";
 import { loadRuns } from "@/lib/server/store";
+import { log } from "@/lib/server/log";
+import { object, parseBody, optional, oneOf, int, query } from "@/lib/validate";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+const Body = object<{ trigger: RunTrigger }>({
+  trigger: optional(oneOf(["manual", "event", "schedule"] as const), "manual"),
+});
+
+/** The run in flight, if any. Joined by concurrent triggers. */
+let inFlight: Promise<RunResult> | null = null;
+
+async function runOnce(trigger: RunTrigger): Promise<{ result: RunResult; joined: boolean }> {
+  if (inFlight) {
+    log.info("agent run already in progress — joining it", { trigger });
+    return { result: await inFlight, joined: true };
+  }
+  inFlight = runAgent(trigger);
   try {
-    const runs = await loadRuns(5);
-    // The full snapshot is large and the screen only needs the headline figures.
-    return NextResponse.json(runs.map(({ summary: _summary, ...head }) => head));
-  } catch (err) {
-    return NextResponse.json({ error: String(err instanceof Error ? err.message : err) }, { status: 500 });
+    return { result: await inFlight, joined: false };
+  } finally {
+    inFlight = null;
   }
 }
 
-export async function POST(req: Request) {
-  try {
-    const body = (await req.json().catch(() => ({}))) as { trigger?: RunTrigger };
-    const result = await runAgent(body.trigger ?? "manual");
-    return NextResponse.json(result);
-  } catch (err) {
-    return NextResponse.json({ error: String(err instanceof Error ? err.message : err) }, { status: 500 });
-  }
-}
+export const GET = route("GET /api/agent/run", async ({ req }) => {
+  const limit = query(req, "limit", optional(int({ min: 1, max: 50 }), 5));
+  const runs = await loadRuns(limit);
+  // The full snapshot is large and the screen only needs the headline figures.
+  return ok(runs.map(({ summary: _summary, ...head }) => head));
+});
+
+export const POST = route(
+  "POST /api/agent/run",
+  async ({ req }) => {
+    const { trigger } = await parseBody(req, Body);
+    const { result, joined } = await runOnce(trigger);
+    return ok({ ...result, joined });
+  },
+  { limit: LLM_RATE_LIMIT },
+);

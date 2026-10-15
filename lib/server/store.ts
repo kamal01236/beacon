@@ -21,26 +21,74 @@ import { loadJiraBase } from "./jira";
 import { loadEventsFile, appendEventFile, clearEventsFile, pruneEventsFile, loadRunsFile, appendRunFile, type RunRow } from "./fileStore";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { log } from "./log";
 
 let seq = 0;
 
-// Which backend is live, resolved once per process. If DATABASE_URL is set we
-// probe Postgres; if it is unreachable we fall back to the faked Jira + .data/
-// file store for the rest of the process instead of erroring — so the stack
-// comes up whether or not a database happens to be running.
-let dbResolved: boolean | null = null;
-async function usingDb(): Promise<boolean> {
+// Which backend is live. If DATABASE_URL is set we probe Postgres; if it is
+// unreachable we fall back to the faked Jira + .data/ file store instead of
+// erroring — so the stack comes up whether or not a database is running.
+//
+// The probe is RE-TRIED every RECHECK_MS while it is failing, so a server that
+// started before its database does picks the database up on its own. It is
+// never retried in the other direction: once Postgres has answered, this
+// process stays on Postgres and a later failure surfaces as a 5xx rather than
+// silently writing the team's next decisions to a different store, which would
+// split the audit log across two backends.
+interface Probe {
+  usingDb: boolean;
+  at: number;
+  error: string | null;
+}
+let probe: Probe | null = null;
+const RECHECK_MS = 60_000;
+
+async function usingDb(now = Date.now()): Promise<boolean> {
   if (!process.env.DATABASE_URL) return false;
-  if (dbResolved !== null) return dbResolved;
+  if (probe && (probe.usingDb || now - probe.at < RECHECK_MS)) return probe.usingDb;
   try {
     const { db } = await import("./db");
     await db().query("SELECT 1");
-    dbResolved = true;
-  } catch {
-    console.warn("[beacon] DATABASE_URL is set but Postgres is unreachable — using the faked Jira + .data/ file store.");
-    dbResolved = false;
+    if (!probe?.usingDb) log.info("store backend: postgres");
+    probe = { usingDb: true, at: now, error: null };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    // Log the downgrade once per probe cycle, not once per request.
+    if (!probe || probe.error !== message) {
+      log.warn("DATABASE_URL is set but Postgres is unreachable — using the faked Jira + .data/ file store", {
+        err: message,
+        retryInMs: RECHECK_MS,
+      });
+    }
+    probe = { usingDb: false, at: now, error: message };
   }
-  return dbResolved;
+  return probe.usingDb;
+}
+
+export interface StoreHealth {
+  /** Which backend this process is reading and writing. */
+  backend: "postgres" | "file";
+  /** Whether a database was configured at all — a file backend with this true is a degraded state. */
+  databaseUrlSet: boolean;
+  lastProbeAt: string | null;
+  /** Why the last probe failed, when it did. */
+  error: string | null;
+}
+
+/** What /api/health reports about storage. Probes, so it is a real readiness check. */
+export async function storeHealth(): Promise<StoreHealth> {
+  const usingPostgres = await usingDb();
+  return {
+    backend: usingPostgres ? "postgres" : "file",
+    databaseUrlSet: !!process.env.DATABASE_URL,
+    lastProbeAt: probe ? new Date(probe.at).toISOString() : null,
+    error: probe?.error ?? null,
+  };
+}
+
+/** Test seam: forget the probe so the next call re-resolves the backend. */
+export function resetStoreProbe(): void {
+  probe = null;
 }
 
 export async function loadBase(): Promise<{ items: Item[]; updates: Update[] }> {
@@ -70,7 +118,12 @@ export async function loadKb(): Promise<KbArticle[]> {
   if (!(await usingDb())) {
     try {
       return JSON.parse(readFileSync(join(process.cwd(), "data", "kb.json"), "utf8")) as KbArticle[];
-    } catch {
+    } catch (err) {
+      // An empty KB degrades the "someone has solved this before" suggestion
+      // rather than failing a run, but it is never normal — say so.
+      log.warn("data/kb.json could not be read — blocker suggestions will have no articles to match", {
+        err: err instanceof Error ? err.message : String(err),
+      });
       return [];
     }
   }
